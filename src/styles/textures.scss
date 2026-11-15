@@ -1,0 +1,162 @@
+// Mirelle — textures, film grain, glass & custom controls
+$terracotta: #c87d65;
+$sand: #e6dec8;
+$espresso: #2c2523;
+$noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+
+// Soft film grain over the whole app
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.045;
+  background-image: $noise;
+  mix-blend-mode: multiply;
+}
+
+.paper-texture {
+  background-color: #f6f0e5;
+  background-image: $noise, radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.6), transparent 60%);
+  background-blend-mode: multiply, normal;
+}
+
+.desk-texture {
+  background-color: #efe7da;
+  background-image: radial-gradient(rgba(44, 37, 35, 0.05) 1px, transparent 1px),
+    radial-gradient(90% 70% at 50% 30%, rgba(255, 255, 255, 0.55), transparent 70%);
+  background-size: 14px 14px, 100% 100%;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+// Custom scrollbars
+.soft-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 111, 107, 0.35) transparent;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(122, 111, 107, 0.28);
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Range slider (shadcn-like, touch friendly)
+.aura-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+  &:focus {
+    outline: none;
+  }
+  &::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 99px;
+    background: linear-gradient(to right, $terracotta var(--pct, 50%), $sand var(--pct, 50%));
+  }
+  &::-moz-range-track {
+    height: 4px;
+    border-radius: 99px;
+    background: $sand;
+  }
+  &::-moz-range-progress {
+    height: 4px;
+    border-radius: 99px;
+    background: $terracotta;
+  }
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    margin-top: -7px;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid $terracotta;
+    box-shadow: 0 2px 6px rgba(44, 37, 35, 0.18);
+    transition: transform 0.15s ease;
+  }
+  &::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid $terracotta;
+    box-shadow: 0 2px 6px rgba(44, 37, 35, 0.18);
+  }
+  &:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+  }
+  &:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(200, 125, 101, 0.25);
+  }
+}
+
+// Glowing magic button
+@keyframes magic-sheen {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+@keyframes magic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(212, 168, 90, 0.35), 0 8px 26px -6px rgba(200, 125, 101, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(212, 168, 90, 0.6), 0 10px 34px -4px rgba(212, 168, 90, 0.75);
+  }
+}
+.magic-btn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, #c87d65 0%, #d4a85a 55%, #c87d65 100%);
+  animation: magic-pulse 2.8s ease-in-out infinite;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: magic-sheen 2.6s linear infinite;
+    pointer-events: none;
+  }
+}
+
+.checker {
+  background-image: linear-gradient(45deg, rgba(0, 0, 0, 0.04) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.04) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.04) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.04) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

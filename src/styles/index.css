@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-oat text-espresso font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  ::selection {
+    background: rgba(200, 125, 101, 0.25);
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-[10.5px] uppercase tracking-[0.18em] text-taupe font-semibold;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 h-10 text-sm font-semibold transition active:scale-[.97] disabled:opacity-50 disabled:pointer-events-none select-none;
+  }
+  .btn-primary {
+    @apply btn bg-terracotta text-white hover:bg-terracotta-dark shadow-soft;
+  }
+  .btn-sage {
+    @apply btn bg-sage text-white hover:bg-sage-dark shadow-soft;
+  }
+  .btn-ghost {
+    @apply btn bg-white/70 text-espresso border border-sand hover:bg-white;
+  }
+  .icon-btn {
+    @apply inline-flex items-center justify-center h-9 w-9 rounded-full border border-sand bg-white/70 text-espresso transition hover:bg-white hover:border-terracotta/40 active:scale-95 disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-sand bg-white/70 px-3 h-8 text-xs font-medium text-espresso whitespace-nowrap transition hover:border-terracotta/50 active:scale-[.97];
+  }
+  .chip-active {
+    @apply border-terracotta bg-terracotta text-white hover:border-terracotta;
+  }
+  .card {
+    @apply rounded-2xl border border-sand bg-white/60;
+  }
+  .input {
+    @apply w-full rounded-xl border border-sand bg-white/80 px-3 py-2 text-sm text-espresso placeholder:text-taupe/60 outline-none transition focus:border-terracotta focus:ring-2 focus:ring-terracotta/15;
+  }
+  .tile {
+    @apply relative overflow-hidden rounded-xl border border-sand bg-white/70 transition hover:-translate-y-0.5 hover:shadow-soft active:scale-[.98];
+  }
+  .tile-active {
+    @apply border-terracotta ring-2 ring-terracotta/25;
+  }
+}
