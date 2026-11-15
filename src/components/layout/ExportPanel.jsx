@@ -20,7 +20,7 @@ export default function ExportPanel({ kind }) {
     try {
       await new Promise((r) => setTimeout(r, 30))
       const out = await exportArtwork(useStudio.getState(), { kind, format, width: size })
-      showToast(`Saved ${out.w}×${out.h} ${format.toUpperCase()} ✨`)
+      if (!out.pending) showToast(`Saved ${out.w}×${out.h} ${format.toUpperCase()} ✨`)
     } catch (e) {
       showToast(e.message || 'Export failed')
     } finally {

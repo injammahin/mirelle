@@ -6,3 +6,6 @@ export const EXAMPLES = Object.entries(import.meta.glob('../assets/examples/*.{j
 
 const ORDER = [3, 5, 1, 2, 4, 6, 0] // pleasant pairing of portraits with the first frames
 export const exampleFor = (i) => (EXAMPLES.length ? EXAMPLES[ORDER[i % ORDER.length] % EXAMPLES.length] : null)
+
+/** Portrait paired with a frame (frame-meta "photo"), falling back to rotation. */
+export const exampleByName = (name) => EXAMPLES.find((e) => e.name === name) || null

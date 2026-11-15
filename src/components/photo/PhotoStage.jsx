@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { RotateCw, Trash2, Copy, Move } from 'lucide-react'
+import { RotateCw, Trash2, Copy, Move, ImagePlus } from 'lucide-react'
 import { useStudio } from '../../store/useStudio'
 import { ASPECTS } from '../../data/filters'
 import { STICKER_MAP } from '../../data/stickers'
 import { useAssetsVersion, useElementSize, useFontsVersion, useImage } from '../../lib/hooks'
 import { cropWindow, getFrameLayout, measureTextLayer, renderPhotoScene } from '../../lib/photoRenderer'
 import { clamp } from '../../lib/random'
+import { loadImage } from '../../lib/assets'
+import { fileToDataUrl } from './PhotosPanel'
 
 function layerSize(l, dispW) {
   if (l.type === 'text') return measureTextLayer(l, dispW)
@@ -34,6 +36,19 @@ export default function PhotoStage() {
   const { select, updateLayer, removeLayer, duplicateLayer, pushHistory } = useStudio.getState()
 
   const img = useImage(photo.src)
+  const slotPhotos = useStudio((s) => s.slotPhotos)
+  const slotCrops = useStudio((s) => s.slotCrops)
+  // load each extra slot's own photo
+  const [slotImages, setSlotImages] = useState({})
+  useEffect(() => {
+    let alive = true
+    Promise.all(Object.entries(slotPhotos).map(([i, p]) => (p?.src ? loadImage(p.src, p.src).then((im) => [i, im]).catch(() => [i, null]) : [i, null]))).then(
+      (pairs) => alive && setSlotImages(Object.fromEntries(pairs)),
+    )
+    return () => {
+      alive = false
+    }
+  }, [slotPhotos])
   const av = useAssetsVersion()
   const fv = useFontsVersion()
 
@@ -54,10 +69,10 @@ export default function PhotoStage() {
       const H = Math.round(dispH * scale)
       if (c.width !== W) c.width = W
       if (c.height !== H) c.height = H
-      renderPhotoScene(c.getContext('2d'), W, H, { image: img, adj, crop, frameId, captions, layers })
+      renderPhotoScene(c.getContext('2d'), W, H, { image: img, adj, crop, frameId, captions, layers, slotImages, slotCrops })
     })
     return () => cancelAnimationFrame(raf)
-  }, [img, adj, crop, frameId, captions, layers, dispW, dispH, av, fv])
+  }, [img, adj, crop, frameId, captions, layers, slotImages, slotCrops, dispW, dispH, av, fv])
 
   // ---- keyboard shortcuts ----
   useEffect(() => {
@@ -121,7 +136,7 @@ export default function PhotoStage() {
   }
   const onMove = (e) => {
     const d = dragRef.current
-    if (!d) return
+    if (!d || (d.mode !== 'move' && d.mode !== 'transform')) return
     if (d.mode === 'move') {
       updateLayer(d.id, { x: clamp(d.lx + (e.clientX - d.sx) / dispW, -0.15, 1.15), y: clamp(d.ly + (e.clientY - d.sy) / dispH, -0.15, 1.15) })
     } else {
@@ -147,16 +162,37 @@ export default function PhotoStage() {
     const L = getFrameLayout(frameId, dispW, dispH)
     const x = e.clientX - r.left
     const y = e.clientY - r.top
-    return x >= L.x && x <= L.x + L.w && y >= L.y && y <= L.y + L.h ? L : null
+    const all = L.slots || [L]
+    const i = all.findIndex((S) => x >= S.x && x <= S.x + S.w && y >= S.y && y <= S.y + S.h)
+    return i < 0 ? null : { ...all[i], index: i }
   }
-  const setCropXY = (patch) => useStudio.setState((st) => ({ crop: { ...st.crop, ...patch } }))
+  const activeSlot = useRef(0)
+  const ownPhoto = (i) => i > 0 && !!useStudio.getState().slotPhotos[i]
+  const cropOf = (i) => (ownPhoto(i) ? useStudio.getState().slotCrops[i] || { zoom: 1, x: 0, y: 0 } : useStudio.getState().crop)
+  const imgOf = (i) => (ownPhoto(i) && slotImages[i]) || img
+  const setCropXY = (patch, i = activeSlot.current) =>
+    ownPhoto(i)
+      ? useStudio.setState((st) => ({ slotCrops: { ...st.slotCrops, [i]: { ...(st.slotCrops[i] || { zoom: 1, x: 0, y: 0 }), ...patch } } }))
+      : useStudio.setState((st) => ({ crop: { ...st.crop, ...patch } }))
   const onStagePointerDown = (e) => {
-    if (e.target !== e.currentTarget || !img) return
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    // second finger: pinch + twist the selected sticker/text (like other mobile editors)
+    if (pointers.current.size === 2) {
+      const st = useStudio.getState()
+      const sel = st.layers.find((l) => l.id === st.selectedId)
+      if (sel) {
+        st.pushHistory()
+        const [a, b] = [...pointers.current.values()]
+        dragRef.current = { mode: 'pinchLayer', id: sel.id, type: sel.type, d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, a0: Math.atan2(b.y - a.y, b.x - a.x), w0: sel.w, size0: sel.size, rot0: sel.rotation || 0 }
+        return
+      }
+    }
+    if (e.target !== e.currentTarget || !img) return
     const L = slotAt(e)
     if (!L) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    const c = useStudio.getState().crop
+    if (pointers.current.size === 1) activeSlot.current = L.index
+    const c = cropOf(activeSlot.current)
     if (pointers.current.size === 2) {
       const [a, b] = [...pointers.current.values()]
       dragRef.current = { mode: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: c.zoom }
@@ -164,7 +200,7 @@ export default function PhotoStage() {
     }
     pushHistory()
     setPanning(true)
-    dragRef.current = { mode: 'pan', sx: e.clientX, sy: e.clientY, x0: c.x, y0: c.y, win: cropWindow(img, L.w, L.h, c.zoom), Lw: L.w, Lh: L.h }
+    dragRef.current = { mode: 'pan', sx: e.clientX, sy: e.clientY, x0: c.x, y0: c.y, win: cropWindow(imgOf(L.index), L.w, L.h, c.zoom), Lw: L.w, Lh: L.h }
   }
   const onStagePointerMove = (e) => {
     const d = dragRef.current
@@ -173,7 +209,18 @@ export default function PhotoStage() {
       if (e.target === e.currentTarget && img) e.currentTarget.style.cursor = slotAt(e) ? 'grab' : ''
       return
     }
-    if (d.mode === 'pinch' && pointers.current.size >= 2) {
+    if (d.mode === 'pinchLayer') {
+      if (pointers.current.size < 2) return
+      const [a, b] = [...pointers.current.values()]
+      const k = Math.hypot(a.x - b.x, a.y - b.y) / d.d0
+      let rot = d.rot0 + ((Math.atan2(b.y - a.y, b.x - a.x) - d.a0) * 180) / Math.PI
+      rot = ((rot + 540) % 360) - 180
+      for (const snap of [-180, -90, 0, 90, 180]) if (Math.abs(rot - snap) < 3) rot = snap
+      const patch = { rotation: Math.round(rot * 10) / 10 }
+      if (d.type === 'text') patch.size = clamp(d.size0 * k, 0.015, 0.3)
+      else patch.w = clamp(d.w0 * k, 0.04, 1.4)
+      updateLayer(d.id, patch)
+    } else if (d.mode === 'pinch' && pointers.current.size >= 2) {
       const [a, b] = [...pointers.current.values()]
       setCropXY({ zoom: clamp((d.z0 * Math.hypot(a.x - b.x, a.y - b.y)) / d.d0, 1, 4) })
     } else if (d.mode === 'pan') {
@@ -187,6 +234,7 @@ export default function PhotoStage() {
   }
   const onStagePointerUp = (e) => {
     pointers.current.delete(e.pointerId)
+    if (dragRef.current?.mode === 'pinchLayer') dragRef.current = null
     if (dragRef.current?.mode === 'pan' || dragRef.current?.mode === 'pinch') {
       dragRef.current = null
       setPanning(false)
@@ -197,15 +245,20 @@ export default function PhotoStage() {
     const el = overlayRef.current
     if (!el) return
     const onWheel = (e) => {
-      if (e.target !== el || !slotAt(e)) return
+      const S = e.target === el && slotAt(e)
+      if (!S) return
       e.preventDefault()
-      const z = useStudio.getState().crop.zoom
-      setCropXY({ zoom: clamp(z * Math.exp(-e.deltaY * 0.0015), 1, 4) })
+      const z = cropOf(S.index).zoom
+      setCropXY({ zoom: clamp(z * Math.exp(-e.deltaY * 0.0015), 1, 4) }, S.index)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   })
-  const slotBox = panning ? getFrameLayout(frameId, dispW, dispH) : null
+  const layoutNow = getFrameLayout(frameId, dispW, dispH)
+  const slotBox = panning ? (layoutNow.slots || [layoutNow])[activeSlot.current] || layoutNow : null
+  const multiSlots = layoutNow.slots?.length > 1 ? layoutNow.slots : []
+  const slotFileRef = useRef(null)
+  const pickSlot = useRef(0)
 
   return (
     <div ref={wrapRef} className="desk-texture soft-scroll relative h-full w-full overflow-auto" onPointerDown={() => select(null)}>
@@ -225,11 +278,44 @@ export default function PhotoStage() {
             )}
           </AnimatePresence>
 
+          {/* multi-photo frames: a different photo for each slot */}
+          {multiSlots.map((S, i) => (
+            <button
+              key={i}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                pickSlot.current = i
+                slotFileRef.current?.click()
+              }}
+              className="absolute z-20 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-semibold text-espresso shadow-soft backdrop-blur transition hover:bg-white"
+              style={{ left: S.x + S.w / 2, top: S.y + S.h - 30 }}
+              title={`Change photo ${i + 1}`}
+            >
+              <ImagePlus size={12} /> Photo {i + 1}
+            </button>
+          ))}
+          <input
+            ref={slotFileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            hidden
+            onChange={async (e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ''
+              if (!file) return
+              const src = await fileToDataUrl(file)
+              useStudio.getState().setSlotPhoto(pickSlot.current, { src, name: file.name, sampleId: null })
+            }}
+          />
+
           {/* placement outline while dragging the photo */}
           {slotBox && <div className="pointer-events-none absolute z-10 border-2 border-white/90 shadow-[0_0_0_1px_rgba(44,37,35,.35)]" style={{ left: slotBox.x, top: slotBox.y, width: slotBox.w, height: slotBox.h }} />}
 
           {/* interaction overlay */}
-          <div ref={overlayRef} className="absolute inset-0 touch-none" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerUp} onPointerCancel={onStagePointerUp} onDoubleClick={(e) => e.target === e.currentTarget && slotAt(e) && setCropXY({ zoom: 1, x: 0, y: 0 })}>
+          <div ref={overlayRef} className="absolute inset-0 touch-none" onPointerDown={onStagePointerDown} onPointerMove={onStagePointerMove} onPointerUp={onStagePointerUp} onPointerCancel={onStagePointerUp} onDoubleClick={(e) => {
+            const S = e.target === e.currentTarget && slotAt(e)
+            if (S) setCropXY({ zoom: 1, x: 0, y: 0 }, S.index)
+          }}>
             {boxes.map(({ l, w, h }) => {
               const sel = l.id === selectedId
               return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Minus, Plus, Maximize2, X, Home } from 'lucide-react'
 import { useStudio } from '../../store/useStudio'
@@ -52,6 +52,25 @@ export default function StudioLayout() {
   const [leftTab, setLeftTab] = useState(tools[0].id)
   const [rightTab, setRightTab] = useState(rightTools[0].id)
   const [sheet, setSheet] = useState(null)
+  // swipe-down-to-close for the mobile sheet
+  const [sheetDrag, setSheetDrag] = useState(0)
+  const dragStart = useRef(null)
+  const startSheetDrag = (e) => {
+    dragStart.current = { y: e.clientY, t: Date.now() }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+  const moveSheetDrag = (e) => {
+    if (!dragStart.current) return
+    setSheetDrag(Math.max(0, e.clientY - dragStart.current.y))
+  }
+  const endSheetDrag = (e) => {
+    if (!dragStart.current) return
+    const dy = e.clientY - dragStart.current.y
+    const fast = dy > 30 && dy / Math.max(1, Date.now() - dragStart.current.t) > 0.5
+    dragStart.current = null
+    setSheetDrag(0)
+    if (dy > 70 || fast) setSheet(null)
+  }
 
   useEffect(() => {
     setLeftTab(tools[0].id)
@@ -87,16 +106,19 @@ export default function StudioLayout() {
         {/* mobile bottom sheet */}
         <AnimatePresence initial={false}>
           {sheetTool && (
-            <motion.div key="sheet" initial={{ height: 0 }} animate={{ height: '46dvh' }} exit={{ height: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 38 }} className="glass overflow-hidden rounded-t-[26px] border-t border-sand shadow-[0_-12px_40px_-20px_rgba(44,37,35,.35)] md:hidden">
+            <motion.div key="sheet" initial={{ height: 0 }} animate={{ height: '46dvh' }} exit={{ height: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 38 }} className="glass overflow-hidden rounded-t-[26px] border-t border-sand shadow-[0_-12px_40px_-20px_rgba(44,37,35,.35)] md:hidden" style={{ transform: sheetDrag ? `translateY(${sheetDrag}px)` : undefined, transition: sheetDrag ? 'none' : 'transform .2s ease' }}>
               <div className="flex h-full flex-col">
-                <div className="flex items-center justify-between px-4 pb-1 pt-2">
-                  <span className="mx-auto h-1 w-10 rounded-full bg-sand" />
+                {/* swipe this header down to close */}
+                <div className="touch-none" onPointerDown={startSheetDrag} onPointerMove={moveSheetDrag} onPointerUp={endSheetDrag} onPointerCancel={endSheetDrag}>
+                <div className="flex cursor-grab items-center justify-between px-4 pb-1.5 pt-2.5">
+                  <span className="mx-auto h-1.5 w-12 rounded-full bg-sand" />
                 </div>
                 <div className="flex items-center justify-between px-4 pb-2">
                   <h2 className="font-serif text-[18px]">{sheetTool.label}</h2>
-                  <button className="icon-btn h-8 w-8" onClick={() => setSheet(null)}>
+                  <button className="icon-btn h-8 w-8" onPointerDown={(e) => e.stopPropagation()} onClick={() => setSheet(null)}>
                     <X size={15} />
                   </button>
+                </div>
                 </div>
                 <div className="soft-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-4">
                   <motion.div key={sheetTool.id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>

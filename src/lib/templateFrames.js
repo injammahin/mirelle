@@ -17,6 +17,11 @@ export const TEMPLATE_OVERRIDES = {
 /** Frame entries for every image in src/assets/frames/<category>/*.(jpg|png|webp) */
 export function discoverTemplates() {
   const files = import.meta.glob('../assets/frames/**/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', { eager: true, query: '?url', import: 'default' })
+  // Frames generated offline ship their exact photo slot + the flower layer that sits over the photo.
+  const metas = import.meta.glob('../assets/frame-meta/**/*.json', { eager: true, import: 'default' })
+  const overlays = import.meta.glob('../assets/frame-overlays/**/*.webp', { eager: true, query: '?url', import: 'default' })
+  // small pre-rendered previews (frame + a matching portrait) for galleries: no canvas work needed
+  const previews = import.meta.glob('../assets/frame-previews/**/*.webp', { eager: true, query: '?url', import: 'default' })
   return Object.entries(files)
     .map(([path, url]) => {
       const parts = path.split('/')
@@ -24,12 +29,16 @@ export function discoverTemplates() {
       const base = file.replace(/\.[^.]+$/, '')
       const folder = parts[parts.length - 1]
       const category = folder === 'frames' ? 'pinterest' : folder
-      return makeTemplateFrame({ id: 'tpl-' + category + '-' + base, name: titleCase(base), src: url, category, override: TEMPLATE_OVERRIDES[base] })
+      const meta = metas[`../assets/frame-meta/${folder}/${base}.json`]
+      const overlaySrc = overlays[`../assets/frame-overlays/${folder}/${base}.webp`] || null
+      const preview = previews[`../assets/frame-previews/${folder}/${base}.webp`] || null
+      return { ...makeTemplateFrame({ id: 'tpl-' + category + '-' + base, name: meta?.name || titleCase(base), src: url, category, override: TEMPLATE_OVERRIDES[base], meta, overlaySrc }), preview }
     })
-    .sort((a, b) => a.name.localeCompare(b.name))
+    // hand-picked originals first, then generated frames in catalogue order
+    .sort((a, b) => (!!a.meta - !!b.meta) || (a.meta?.order ?? 0) - (b.meta?.order ?? 0) || a.name.localeCompare(b.name))
 }
 
-export const makeTemplateFrame = ({ id, name, src, category = 'pinterest', override, custom = false }) => ({
+export const makeTemplateFrame = ({ id, name, src, category = 'pinterest', override, custom = false, meta = null, overlaySrc = null }) => ({
   id,
   name,
   family: 'tpl:' + category,
@@ -38,6 +47,8 @@ export const makeTemplateFrame = ({ id, name, src, category = 'pinterest', overr
   src,
   override,
   custom,
+  meta,
+  overlaySrc,
   hasCaption: false,
 })
 
@@ -259,13 +270,21 @@ export function getTemplate(frame) {
   if (hit) return hit
   const raw = getImage('tpl:' + frame.src, frame.src)
   if (!raw) return null
+  if (frame.meta) {
+    // pre-built frame: exact slot from metadata, overlay image instead of analysis
+    const ov = frame.overlaySrc ? getImage('tplo:' + frame.overlaySrc, frame.overlaySrc) : null
+    if (frame.overlaySrc && !ov) return null
+    const a = { img: raw, slot: frame.meta.slot, overlay: ov, style: frame.meta.style || null, aspect: raw.naturalWidth / raw.naturalHeight }
+    cache.set(frame.src, a)
+    return a
+  }
   const a = analyse(frame, trimBorders(raw))
   cache.set(frame.src, a)
   return a
 }
 
 export async function loadTemplate(frame) {
-  await loadImage('tpl:' + frame.src, frame.src)
+  await Promise.all([loadImage('tpl:' + frame.src, frame.src), frame.overlaySrc ? loadImage('tplo:' + frame.overlaySrc, frame.overlaySrc) : null])
   return getTemplate(frame)
 }
 
@@ -281,8 +300,18 @@ export function templateLayout(frame, W, H) {
   const t = getTemplate(frame)
   if (!t) return { x: W * 0.15, y: H * 0.15, w: W * 0.7, h: H * 0.7, shape: 'rect', pending: true }
   const p = placement(t, W, H)
-  const [sx, sy, sw, sh] = t.slot
-  return { x: p.ox + sx * p.dw, y: p.oy + sy * p.dh, w: sw * p.dw, h: sh * p.dh, shape: 'rect' }
+  const toL = (sl, shape) => {
+    const [sx, sy, sw, sh] = sl
+    const L = { x: p.ox + sx * p.dw, y: p.oy + sy * p.dh, w: sw * p.dw, h: sh * p.dh, shape: shape || 'rect' }
+    if (L.shape === 'rounded') L.radius = Math.min(L.w, L.h) * 0.06
+    return L
+  }
+  const slots = frame.meta?.slots
+  if (slots?.length) {
+    const all = slots.map((s) => toL(s.slot, s.shape))
+    return { ...all[0], slots: all }
+  }
+  return toL(t.slot)
 }
 
 export function drawTemplateBack(ctx, frame, W, H, L) {

@@ -14,7 +14,7 @@ export function useDownloadPng() {
     try {
       await new Promise((r) => setTimeout(r, 30))
       const out = await downloadBestPng(st, st.mode === 'letter' ? 'letter' : 'photo')
-      st.showToast(`Saved ${out.w}×${out.h} PNG ✨`)
+      if (!out.pending) st.showToast(`Saved ${out.w}×${out.h} PNG ✨`)
     } catch (e) {
       st.showToast(e.message || 'Download failed')
     } finally {

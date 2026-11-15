@@ -29,14 +29,17 @@ export async function preparePhoto(state) {
   await Promise.all([...ids].filter((id) => STICKER_MAP[id]).map((id) => (STICKER_MAP[id].kind === 'image' ? prepareSticker(STICKER_MAP[id]) : loadSvgImage('st:' + id, STICKER_MAP[id].svg)).catch(() => {})))
   const fr = FRAME_MAP[state.frameId]
   if (fr?.kind === 'template') await loadTemplate(fr).catch(() => {})
+  state.__slotImages = {}
+  for (const [i, p] of Object.entries(state.slotPhotos || {})) if (p?.src) state.__slotImages[i] = await loadImage(p.src, p.src).catch(() => null)
   return img
 }
 
 export async function renderPhotoCanvas(state, width, { cache = false } = {}) {
+  state = { ...state }
   const image = await preparePhoto(state)
   const [W, H] = dims(state.aspect, width)
   const c = makeCanvas(W, H)
-  renderPhotoScene(c.getContext('2d'), W, H, { ...state, image }, { cache })
+  renderPhotoScene(c.getContext('2d'), W, H, { ...state, image, slotImages: state.__slotImages }, { cache })
   return c
 }
 
@@ -62,14 +65,48 @@ function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1500)
 }
 
-export async function exportArtwork(state, { kind, format = 'png', width = 2160 }) {
+/** Phones/tablets that can hand a file to the system share sheet ("Save Image" -> Photos). */
+export function canSaveToPhotos() {
+  try {
+    const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))
+    return mobile && !!navigator.canShare && navigator.canShare({ files: [new File([new Blob(['x'], { type: 'image/png' })], 'x.png', { type: 'image/png' })] })
+  } catch {
+    return false
+  }
+}
+
+export async function renderArtworkBlob(state, { kind, format = 'png', width = 2160 }) {
   const c = kind === 'letter' ? await renderLetterCanvas(state, width) : await renderPhotoCanvas(state, width)
   const mime = format === 'jpg' ? 'image/jpeg' : 'image/png'
   const blob = await new Promise((res) => c.toBlob(res, mime, 0.95))
   if (!blob) throw new Error('Export failed — try a smaller size')
   const stamp = new Date().toISOString().slice(0, 10)
-  download(blob, `mirelle-${kind}-${state.aspect.replace(':', 'x')}-${c.width}px-${stamp}.${format}`)
-  return { w: c.width, h: c.height }
+  return { blob, name: `mirelle-${kind}-${state.aspect.replace(':', 'x')}-${c.width}px-${stamp}.${format}`, w: c.width, h: c.height }
+}
+
+/** Renders and delivers the image: share-sheet hand-off on phones (Save to Photos), download elsewhere. */
+export async function exportArtwork(state, opts) {
+  const out = await renderArtworkBlob(state, opts)
+  if (canSaveToPhotos()) {
+    // the share sheet needs a fresh tap, so park the file and let SaveSheet ask for it
+    state.setReadyExport?.(out)
+    return { w: out.w, h: out.h, pending: true }
+  }
+  download(out.blob, out.name)
+  return { w: out.w, h: out.h }
+}
+
+/** Called from a tap in SaveSheet. Falls back to a normal download if sharing is refused. */
+export async function saveToPhotos({ blob, name }) {
+  const file = new File([blob], name, { type: blob.type })
+  try {
+    await navigator.share({ files: [file], title: 'Mirelle' })
+    return true
+  } catch (e) {
+    if (e?.name === 'AbortError') return false
+    download(blob, name)
+    return true
+  }
 }
 
 /** One-tap "best quality" PNG: as large as the device can safely render (4K+ on desktop). */

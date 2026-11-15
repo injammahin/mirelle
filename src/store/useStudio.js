@@ -49,10 +49,20 @@ export const useStudio = create((set, get) => ({
     get().pushHistory()
     const f = FRAME_MAP[frameId]
     // a new frame starts clean: no stickers carried over (undo brings them back)
-    const patch = { frameId, crop: { zoom: 1, x: 0, y: 0 }, layers: get().layers.filter((l) => l.type !== 'sticker'), selectedId: null }
+    const patch = { frameId, crop: { zoom: 1, x: 0, y: 0 }, slotCrops: {}, layers: get().layers.filter((l) => l.type !== 'sticker'), selectedId: null }
     if (f?.kind === 'template') patch.aspect = templateAspect(f)
     set(patch)
   },
+  // multi-photo frames: slot 0 uses `photo`/`crop`; other slots can have their own photo + position
+  slotPhotos: {}, // { [slotIndex]: { src, name } }
+  slotCrops: {}, // { [slotIndex]: { zoom, x, y } }
+  setSlotPhoto: (i, photo) => {
+    if (i === 0) return get().setPhoto(photo)
+    get().pushHistory()
+    set((s) => ({ slotPhotos: { ...s.slotPhotos, [i]: photo }, slotCrops: { ...s.slotCrops, [i]: { zoom: 1, x: 0, y: 0 } } }))
+  },
+  readyExport: null, // rendered image waiting for the user's tap to open the share sheet (mobile)
+  setReadyExport: (readyExport) => set({ readyExport }),
   framesVersion: 0,
   bumpFrames: () => set((s) => ({ framesVersion: s.framesVersion + 1 })),
   setCaption: (frameId, text) => set((s) => ({ captions: { ...s.captions, [frameId]: text } })),
@@ -170,7 +180,7 @@ loadCustomFrames().then((n) => n && useStudio.getState().bumpFrames())
 
 /* ---- keep the user's place across reloads (tab session only) ---- */
 const SESSION_KEY = 'mirelle:session'
-const PERSIST = ['mode', 'aspect', 'frameId', 'crop', 'filterId', 'adj', 'captions', 'layers', 'vibe', 'photo']
+const PERSIST = ['mode', 'aspect', 'frameId', 'crop', 'filterId', 'adj', 'captions', 'layers', 'vibe', 'photo', 'slotPhotos', 'slotCrops']
 try {
   const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null')
   if (saved) {
@@ -193,6 +203,7 @@ useStudio.subscribe((s) => {
       const out = Object.fromEntries(PERSIST.map((k) => [k, s[k]]))
       // blob: URLs die with the page; very large data URLs would overflow storage
       if (out.photo?.src?.startsWith('blob:') || (out.photo?.src?.length || 0) > 3_000_000) delete out.photo
+      if (JSON.stringify(out.slotPhotos || {}).length > 3_000_000) delete out.slotPhotos
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(out))
     } catch {
       /* quota or private mode: ignore */

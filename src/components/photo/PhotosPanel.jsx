@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
 import { ImagePlus, Check } from 'lucide-react'
-import { SAMPLES } from '../../data/samples'
 import { useStudio } from '../../store/useStudio'
 import Section from '../ui/Section'
 
 const MAX_SIDE = 4096
 
-async function fileToDataUrl(file) {
+export async function fileToDataUrl(file) {
   const url = URL.createObjectURL(file)
   try {
     const img = await new Promise((res, rej) => {
@@ -75,24 +74,6 @@ export default function PhotosPanel() {
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
       </div>
 
-      <Section title="Starter gallery">
-        <div className="grid grid-cols-3 gap-2.5">
-          {SAMPLES.map((s) => {
-            const active = photo.sampleId === s.id
-            return (
-              <button key={s.id} onClick={() => setPhoto({ src: s.src, name: s.name, sampleId: s.id })} className={`tile aspect-[4/5] ${active ? 'tile-active' : ''}`} title={s.name}>
-                <img src={s.src} alt={s.name} className="h-full w-full object-cover" loading="lazy" />
-                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-1.5 pb-1 pt-4 text-left text-[10px] font-semibold leading-tight text-white">{s.name}</span>
-                {active && (
-                  <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-terracotta text-white">
-                    <Check size={12} />
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </Section>
     </div>
   )
 }

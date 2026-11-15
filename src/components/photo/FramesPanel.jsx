@@ -19,7 +19,9 @@ export default function FramesPanel() {
   const [family, setFamily] = useState('all')
   const families = useMemo(() => frameFamilies(), [framesVersion])
   const list = useMemo(() => (family === 'all' ? [...FRAMES] : FRAMES.filter((f) => f.family === family)), [family, framesVersion])
-  const thumbs = useFrameThumbs(list)
+  // built-in frames ship pre-rendered previews; only classic + uploaded frames render live
+  const live = useMemo(() => list.filter((f) => !f.preview), [list])
+  const thumbs = useFrameThumbs(live)
 
   const onUpload = async (e) => {
     const files = [...(e.target.files || [])].filter((f) => f.type.startsWith('image/'))
@@ -75,7 +77,7 @@ export default function FramesPanel() {
           {list.map((f) => (
             <div key={f.id} role="button" tabIndex={0} onClick={() => setFrame(f.id)} onKeyDown={(e) => e.key === 'Enter' && setFrame(f.id)} className={`tile relative cursor-pointer p-1.5 text-left ${frameId === f.id ? 'tile-active' : ''}`}>
               <div className="checker overflow-hidden rounded-lg">
-                {thumbs[f.id] ? <img src={thumbs[f.id]} alt={f.name} className="w-full" loading="lazy" /> : <div className={`${f.kind === 'template' ? 'aspect-[9/16]' : 'aspect-[4/5]'} animate-pulse bg-linen`} />}
+                {f.preview || thumbs[f.id] ? <img src={f.preview || thumbs[f.id]} alt={f.name} className="w-full" loading="lazy" decoding="async" /> : <div className={`${f.kind === 'template' ? 'aspect-[9/16]' : 'aspect-[4/5]'} animate-pulse bg-linen`} />}
               </div>
               <div className="px-1 pb-0.5 pt-1.5 text-[12px] font-semibold leading-tight text-espresso">{f.name}</div>
               {f.custom && (

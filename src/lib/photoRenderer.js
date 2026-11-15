@@ -83,6 +83,14 @@ function shapePath(ctx, L) {
   if (L.shape === 'ellipse') ctx.ellipse(L.x + L.w / 2, L.y + L.h / 2, L.w / 2, L.h / 2, 0, 0, Math.PI * 2)
   else if (L.shape === 'rounded') roundRectPath(ctx, L.x, L.y, L.w, L.h, L.radius)
   else if (L.shape === 'torn') tornRectPath(ctx, L, 11)
+  else if (L.shape === 'arch') {
+    const r = L.w / 2
+    ctx.moveTo(L.x, L.y + L.h)
+    ctx.lineTo(L.x, L.y + r)
+    ctx.arc(L.x + r, L.y + r, r, Math.PI, 0)
+    ctx.lineTo(L.x + L.w, L.y + L.h)
+    ctx.closePath()
+  }
   else ctx.rect(L.x, L.y, L.w, L.h)
 }
 
@@ -830,6 +838,19 @@ export function cropWindow(img, w, h, zoom = 1) {
   return { sw, sh, mx: (iw - sw) / 2, my: (ih - sh) / 2 }
 }
 
+/** Blend a frame's colour grade into the user's adjustments (user's own tint wins). */
+function gradeAdj(adj, g) {
+  const c = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+  return {
+    ...adj,
+    warmth: c((adj.warmth || 0) + (g.warmth || 0), -100, 100),
+    saturation: c((adj.saturation || 0) + (g.saturation || 0), -100, 100),
+    fade: c((adj.fade || 0) + (g.fade || 0), 0, 100),
+    contrast: c((adj.contrast || 0) + (g.contrast || 0), -100, 100),
+    tint: adj.tint?.a ? adj.tint : g.tint,
+  }
+}
+
 /* ---------------- whole scene ---------------- */
 export function renderPhotoScene(ctx, W, H, s, { skipLayers = false, cache = true } = {}) {
   const L = getFrameLayout(s.frameId, W, H)
@@ -838,20 +859,27 @@ export function renderPhotoScene(ctx, W, H, s, { skipLayers = false, cache = tru
   ctx.clearRect(0, 0, W, H)
   if (fr?.kind === 'template') drawTemplateBack(ctx, fr, W, H, L)
   else drawFrameBack(ctx, s.frameId, W, H, L)
-  ctx.save()
-  shapePath(ctx, L)
-  ctx.clip()
-  if (s.image) {
-    const fp = renderFilteredPhoto(s.image, s.adj, s.crop, L.w, L.h, { cache })
-    ctx.drawImage(fp, L.x, L.y, L.w, L.h)
-  } else {
-    const g = ctx.createLinearGradient(L.x, L.y, L.x + L.w, L.y + L.h)
-    g.addColorStop(0, '#efe6d8')
-    g.addColorStop(1, '#e2d5c1')
-    ctx.fillStyle = g
-    ctx.fillRect(L.x, L.y, L.w, L.h)
-  }
-  ctx.restore()
+  // frames can grade the photo to sit in their palette
+  const adj = fr?.meta?.grade ? gradeAdj(s.adj || {}, fr.meta.grade) : s.adj
+  ;(L.slots || [L]).forEach((S, i) => {
+    // each slot may carry its own photo + position (multi-photo frames)
+    const image = (i > 0 && s.slotImages?.[i]) || s.image
+    const crop = (i > 0 && s.slotCrops?.[i]) || s.crop
+    ctx.save()
+    shapePath(ctx, S)
+    ctx.clip()
+    if (image) {
+      const fp = renderFilteredPhoto(image, adj, crop, S.w, S.h, { cache })
+      ctx.drawImage(fp, S.x, S.y, S.w, S.h)
+    } else {
+      const g = ctx.createLinearGradient(S.x, S.y, S.x + S.w, S.y + S.h)
+      g.addColorStop(0, '#efe6d8')
+      g.addColorStop(1, '#e2d5c1')
+      ctx.fillStyle = g
+      ctx.fillRect(S.x, S.y, S.w, S.h)
+    }
+    ctx.restore()
+  })
   if (fr?.kind === 'template') drawTemplateFront(ctx, fr, W, H)
   else drawFrameFront(ctx, s.frameId, W, H, L, s.captions)
   if (!skipLayers) drawLayers(ctx, s.layers || [], W, H)

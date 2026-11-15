@@ -49,7 +49,9 @@ export function createRecipe(vibeId, aspectKey = '4:5', rng = Math.random) {
 
   // stickers
   const count = Math.min(vibe.maxStickers || 3, rng() > 0.45 ? 3 : 2)
-  const pool = shuffle(vibe.stickers, rng)
+  // use the real image stickers (any category); fall back to the vibe's list if none are bundled
+  const real = Object.values(STICKER_MAP).filter((d) => d.kind === 'image' && !d.custom).map((d) => d.id)
+  const pool = shuffle(real.length ? real : vibe.stickers, rng)
   const chosen = []
   const kinds = new Set()
   for (const id of pool) {
@@ -65,7 +67,7 @@ export function createRecipe(vibeId, aspectKey = '4:5', rng = Math.random) {
   const layers = []
   for (const id of chosen) {
     const def = STICKER_MAP[id]
-    const slotId = (PREFS[def.kind] || PREFS.charm).find((sid) => !used.has(SLOTS[sid].occupies))
+    const slotId = (PREFS[def.kind === 'image' ? 'charm' : def.kind] || PREFS.charm).find((sid) => !used.has(SLOTS[sid].occupies))
     if (!slotId) continue
     const slot = SLOTS[slotId]
     used.add(slot.occupies)
@@ -77,7 +79,7 @@ export function createRecipe(vibeId, aspectKey = '4:5', rng = Math.random) {
       stickerId: id,
       x,
       y,
-      w: def.defaultW * rand(0.9, 1.15, rng),
+      w: (def.kind === 'image' ? 0.24 : def.defaultW) * rand(0.9, 1.15, rng),
       rotation: Math.round(rand(slot.rot[0], slot.rot[1], rng)),
       opacity: def.kind === 'stain' ? 0.6 : 1,
       flip: rng() > 0.6,
