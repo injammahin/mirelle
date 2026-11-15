@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Sparkles, Undo2, Redo2, Lightbulb } from 'lucide-react'
+import { FRAME_MAP } from '../../data/frames'
+import { STICKER_MAP } from '../../data/stickers'
+import { loadTemplate, templateAspect } from '../../lib/templateFrames'
+import { prepareSticker } from '../../lib/imageStickers'
 import VibeIcon from '../ui/VibeIcon'
 import { VIBES } from '../../data/vibes'
 import { PROMPTS } from '../../data/letter'
 import { useStudio } from '../../store/useStudio'
-import { createLetterRecipe, createRecipe } from '../../lib/magic'
+import { createLetterRecipe, createRecipe, pickAutoFrame, autoStickerIds, createAutoRecipe } from '../../lib/magic'
 import { pick, uid } from '../../lib/random'
 
 function Burst({ bursts }) {
@@ -54,9 +58,23 @@ export default function MagicBar() {
       useStudio.setState((s) => ({ magicTick: s.magicTick + 1 }))
       st.showToast(`Stationery styled · ${VIBES.find((v) => v.id === vibe).name}`)
     } else {
-      const r = createRecipe(vibe, st.aspect)
-      st.applyRecipe(r)
-      st.showToast(r.summary)
+      const frameId = pickAutoFrame(vibe, st.frameId)
+      if (!frameId) {
+        const r = createRecipe(vibe, st.aspect)
+        st.applyRecipe(r)
+        st.showToast(r.summary)
+        return
+      }
+      // load the frame + stickers first so placement uses their real sizes
+      const frame = FRAME_MAP[frameId]
+      const stickerIds = autoStickerIds(vibe)
+      Promise.all([loadTemplate(frame), ...stickerIds.map((id) => prepareSticker(STICKER_MAP[id]))])
+        .catch(() => {})
+        .then(() => {
+          const r = createAutoRecipe(vibe, frameId, templateAspect(frame), stickerIds)
+          useStudio.getState().applyRecipe(r)
+          useStudio.getState().showToast(r.summary)
+        })
     }
   }
 

@@ -12,7 +12,7 @@ import { discoverStickers } from '../lib/imageStickers'
 
 discoverStickers()
 
-const snapshot = (s) => ({ filterId: s.filterId, adj: s.adj, crop: s.crop, frameId: s.frameId, captions: s.captions, layers: s.layers })
+const snapshot = (s) => ({ filterId: s.filterId, adj: s.adj, crop: s.crop, frameId: s.frameId, captions: s.captions, layers: s.layers, doodle: s.doodle })
 
 // Canvas starts clean: stickers only appear when the user adds them.
 const initialLayers = []
@@ -51,6 +51,7 @@ export const useStudio = create((set, get) => ({
     // a new frame starts clean: no stickers carried over (undo brings them back)
     const patch = { frameId, crop: { zoom: 1, x: 0, y: 0 }, slotCrops: {}, layers: get().layers.filter((l) => l.type !== 'sticker'), selectedId: null }
     if (f?.kind === 'template') patch.aspect = templateAspect(f)
+    if (frameId === 'none') patch.aspect = 'original' // photo only: keep its own proportions
     set(patch)
   },
   // multi-photo frames: slot 0 uses `photo`/`crop`; other slots can have their own photo + position
@@ -60,6 +61,11 @@ export const useStudio = create((set, get) => ({
     if (i === 0) return get().setPhoto(photo)
     get().pushHistory()
     set((s) => ({ slotPhotos: { ...s.slotPhotos, [i]: photo }, slotCrops: { ...s.slotCrops, [i]: { zoom: 1, x: 0, y: 0 } } }))
+  },
+  doodle: { style: 'none', color: '#ffffff' },
+  setDoodle: (p) => {
+    get().pushHistory()
+    set((s) => ({ doodle: { ...s.doodle, ...p } }))
   },
   readyExport: null, // rendered image waiting for the user's tap to open the share sheet (mobile)
   setReadyExport: (readyExport) => set({ readyExport }),
@@ -109,7 +115,7 @@ export const useStudio = create((set, get) => ({
 
   applyRecipe: (r) => {
     get().pushHistory()
-    set((s) => ({ filterId: r.filterId, adj: r.adj, frameId: r.frameId, captions: { ...s.captions, ...r.captions }, layers: r.layers, selectedId: null, magicTick: s.magicTick + 1 }))
+    set((s) => ({ filterId: r.filterId, adj: r.adj, frameId: r.frameId, captions: { ...s.captions, ...r.captions }, layers: r.layers, selectedId: null, magicTick: s.magicTick + 1, ...(r.aspect ? { aspect: r.aspect, crop: { zoom: 1, x: 0, y: -0.4 }, slotCrops: {} } : {}) }))
   },
   loadShowcase: (pin) => {
     if (pin.kind === 'letter') {
@@ -180,7 +186,7 @@ loadCustomFrames().then((n) => n && useStudio.getState().bumpFrames())
 
 /* ---- keep the user's place across reloads (tab session only) ---- */
 const SESSION_KEY = 'mirelle:session'
-const PERSIST = ['mode', 'aspect', 'frameId', 'crop', 'filterId', 'adj', 'captions', 'layers', 'vibe', 'photo', 'slotPhotos', 'slotCrops']
+const PERSIST = ['mode', 'aspect', 'frameId', 'crop', 'filterId', 'adj', 'captions', 'layers', 'vibe', 'photo', 'slotPhotos', 'slotCrops', 'doodle']
 try {
   const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null')
   if (saved) {

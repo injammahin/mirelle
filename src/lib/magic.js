@@ -26,6 +26,79 @@ const PREFS = {
   stain: ['br', 'bl'],
 }
 
+// ---- Auto with the real Pinterest frames + stickers, matched to the vibe ----
+const AUTO = {
+  coquette: {
+    frames: ['romantic-cherry-blossom-bow', 'romantic-pink-hibiscus-paper', 'romantic-hibiscus-duo', 'floral-bougainvillea-wall', 'floral-instagram-bougainvillea', 'desi-bougainvillea-duo'],
+    stickers: ['charms-pink-bow', 'charms-fingerprint-heart', 'flowers-pink-lily-sticker', 'flowers-sheer-blossom', 'flowers-pink-hibiscus', 'charms-heart-hands', 'bouquets-sunflowers-pink-bow', 'flowers-pink-lily'],
+  },
+  darkAcademia: {
+    frames: ['vintage-vintage-1979', 'vintage-make-today-beautiful', 'romantic-burgundy-gallery', 'floral-midnight-ocean', 'floral-hibiscus-wine'],
+    stickers: ['vintage-collecting-moments', 'vintage-forget-me-not-page', 'vintage-botanical-scrap', 'vintage-books-and-sunflowers', 'charms-halftone-camera', 'flowers-pressed-cosmos', 'flowers-burgundy-cosmos', 'bouquets-red-tulips'],
+  },
+  softBotanical: {
+    frames: ['sunflower-daisy-field', 'floral-lotus-duo', 'floral-ocean-pearl-bloom', 'floral-sunflower-scrapbook', 'sunflower-sunflower-post', 'sunflower-golden-polaroid-duo'],
+    stickers: ['flowers-daisy', 'flowers-white-cosmos', 'bouquets-lavender-bunch', 'bouquets-daisy-bouquet', 'flowers-sunflower-sticker', 'flowers-yellow-gerbera', 'charms-monarch-butterfly', 'flowers-watercolor-lotus'],
+  },
+  vintage90s: {
+    frames: ['sunflower-sunflower-polaroid', 'sunflower-golden-polaroid-duo', 'vintage-vintage-1979', 'desi-desi-torn-paper', 'vintage-make-today-beautiful'],
+    stickers: ['charms-cream-camera', 'charms-blue-instax', 'charms-sunflower-instax', 'charms-halftone-camera', 'vintage-sunflower-tape', 'vintage-daisy-love-note', 'bouquets-wildflower-newspaper'],
+  },
+  minimalEditorial: {
+    frames: ['sunflower-sunflower-glass', 'sunflower-sunflower-night', 'desi-desi-core', 'floral-hibiscus-wine', 'floral-ocean-pearl-bloom'],
+    stickers: ['charms-evil-eye', 'flowers-plumeria', 'flowers-yellow-lily', 'charms-gingham-bow', 'flowers-watercolor-lotus', 'flowers-sunflower-night'],
+  },
+}
+
+/** Picks a real frame for the vibe (different from the current one). Load it before createAutoRecipe. */
+export function pickAutoFrame(vibeId, currentId, rng = Math.random) {
+  const ids = (AUTO[vibeId] || AUTO.coquette).frames.map((f) => 'tpl-' + f).filter((id) => FRAME_MAP[id])
+  const pool = ids.filter((id) => id !== currentId)
+  return pool.length ? pick(pool, rng) : ids[0] || null
+}
+
+export function autoStickerIds(vibeId, rng = Math.random) {
+  const ids = (AUTO[vibeId] || AUTO.coquette).stickers.map((s) => 'img-' + s).filter((id) => STICKER_MAP[id])
+  return shuffle(ids, rng).slice(0, rng() > 0.35 ? 2 : 1)
+}
+
+/** Full design: real frame + soft vibe filter + 1-2 themed stickers tucked on the photo corners (never on the face). */
+export function createAutoRecipe(vibeId, frameId, aspectKey, stickerIds, rng = Math.random) {
+  const vibe = VIBE_MAP[vibeId] || VIBE_MAP.coquette
+  const filterId = pick(vibe.filters, rng)
+  const base = FILTER_MAP[filterId].params
+  // the frame already colour-grades the photo, so keep the filter gentle
+  const soft = (v) => Math.round((v || 0) * 0.55)
+  const adj = { ...base, brightness: soft(base.brightness), contrast: soft(base.contrast), saturation: soft(base.saturation), warmth: soft(base.warmth), fade: soft(base.fade), vignette: soft(base.vignette), grain: Math.min(14, base.grain || 0), leak: 0, dateStamp: false, blur: 0 }
+  const asp = ASPECTS[aspectKey] || ASPECTS['9:16']
+  const W = 1000
+  const H = (1000 * asp.h) / asp.w
+  const L0 = getFrameLayout(frameId, W, H)
+  const slots = L0.slots || [L0]
+  const last = slots[slots.length - 1]
+  // corners of the photo card, overlapping its edge a little (bottom corners first: faces sit up top)
+  const bottom = shuffle([{ s: last, u: 0.94, v: 0.94, rot: [-14, 4] }, { s: last, u: 0.06, v: 0.93, rot: [-6, 12] }], rng)
+  const top = shuffle([{ s: slots[0], u: 0.95, v: 0.05, rot: [6, 18] }, { s: slots[0], u: 0.05, v: 0.06, rot: [-18, -6] }], rng)
+  const spots = [bottom[0], top[0], bottom[1]]
+  const layers = stickerIds.map((id, i) => {
+    const sp = spots[i]
+    const def = STICKER_MAP[id]
+    const tall = def.h && def.w ? def.h / def.w : 1
+    return {
+      id: uid(),
+      type: 'sticker',
+      stickerId: id,
+      x: (sp.s.x + sp.u * sp.s.w) / W,
+      y: (sp.s.y + sp.v * sp.s.h) / H,
+      w: clamp(rand(0.2, 0.26, rng) / Math.max(1, tall * 0.8), 0.13, 0.28),
+      rotation: Math.round(rand(sp.rot[0], sp.rot[1], rng)),
+      opacity: 1,
+      flip: false,
+    }
+  })
+  return { filterId, adj, frameId, captions: {}, layers, aspect: aspectKey, summary: `${vibe.name} · ${FRAME_MAP[frameId].name}` }
+}
+
 export function createRecipe(vibeId, aspectKey = '4:5', rng = Math.random) {
   const vibe = VIBE_MAP[vibeId] || VIBE_MAP.coquette
   const asp = ASPECTS[aspectKey] || ASPECTS['4:5']

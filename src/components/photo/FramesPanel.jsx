@@ -18,7 +18,12 @@ export default function FramesPanel() {
   const frame = FRAME_MAP[frameId] || FRAMES[0]
   const [family, setFamily] = useState('all')
   const families = useMemo(() => frameFamilies(), [framesVersion])
-  const list = useMemo(() => (family === 'all' ? [...FRAMES] : FRAMES.filter((f) => f.family === family)), [family, framesVersion])
+  const list = useMemo(() => {
+    const l = family === 'all' ? [...FRAMES] : FRAMES.filter((f) => f.family === family)
+    // "No frame" always leads, so a plain photo edit is one tap away
+    const none = FRAMES.find((f) => f.id === 'none')
+    return none ? [none, ...l.filter((f) => f.id !== 'none')] : l
+  }, [family, framesVersion])
   // built-in frames ship pre-rendered previews; only classic + uploaded frames render live
   const live = useMemo(() => list.filter((f) => !f.preview), [list])
   const thumbs = useFrameThumbs(live)

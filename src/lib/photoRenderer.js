@@ -4,6 +4,8 @@ import { getSvgImage } from './assets'
 import { STICKER_MAP } from '../data/stickers'
 import { fontString } from '../data/fonts'
 import { mulberry32 } from './random'
+import LOOKS from '../data/looks.json'
+import { drawDoodle } from './doodle'
 import { FRAME_MAP } from '../data/frames'
 import { getStickerCanvas } from './imageStickers'
 import { templateLayout, drawTemplateBack, drawTemplateFront } from './templateFrames'
@@ -193,6 +195,9 @@ export function renderFilteredPhoto(img, adj, crop, w, h, { cache = true } = {})
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h)
   }
 
+  // ---- reference "look": match this photo's colour/tone distribution to the reference photo ----
+  if (adj.look && LOOKS[adj.look]) applyLook(ctx, w, h, LOOKS[adj.look], (adj.lookStrength ?? 85) / 100, adj.lookCast ?? 90)
+
   // ---- per-pixel colour grading ----
   const B = (adj.brightness || 0) / 100
   const C = (adj.contrast || 0) * 1.28
@@ -286,6 +291,71 @@ export function renderFilteredPhoto(img, adj, crop, w, h, { cache = true } = {})
     ctx.fillStyle = g
     ctx.fillRect(0, 0, w, h)
   }
+  // ---- light effects (the "aesthetic" part of the looks): soft focus, sun haze, bloom ----
+  // Intensity slider scales them together with the colour look.
+  const fx = adj.look ? Math.min(1.3, (adj.lookStrength ?? 85) / 85) : 1
+  const hz = adj.hazeColor || [255, 214, 170]
+  const rgbA = (a) => `rgba(${hz[0]},${hz[1]},${hz[2]},${Math.max(0, Math.min(1, a))})`
+  const blurred = (div) => {
+    const b = makeCanvas(w / div, h / div)
+    const bc = b.getContext('2d', { willReadFrequently: true })
+    bc.imageSmoothingQuality = 'high'
+    bc.drawImage(c, 0, 0, b.width, b.height)
+    return b
+  }
+  // dreamy soft focus (Orton): a blurred copy laid over the photo
+  if (adj.soft > 0) {
+    const b = blurred(18)
+    ctx.save()
+    ctx.imageSmoothingQuality = 'high'
+    ctx.globalAlpha = Math.min(0.6, (adj.soft / 100) * 0.55 * fx)
+    ctx.drawImage(b, 0, 0, w, h)
+    ctx.globalCompositeOperation = 'screen'
+    ctx.globalAlpha = Math.min(0.4, (adj.soft / 100) * 0.3 * fx)
+    ctx.drawImage(b, 0, 0, w, h)
+    ctx.restore()
+  }
+  // sun haze: warm light pouring in from one side, plus lifted (hazy) shadows
+  if (adj.haze > 0) {
+    const a = (adj.haze / 100) * fx
+    const [hx, hy] = adj.hazeFrom || [0.15, 0.1]
+    ctx.save()
+    ctx.globalCompositeOperation = 'screen'
+    let g = ctx.createRadialGradient(hx * w, hy * h, 0, hx * w, hy * h, Math.max(w, h) * 1.05)
+    g.addColorStop(0, rgbA(0.85 * a))
+    g.addColorStop(0.35, rgbA(0.45 * a))
+    g.addColorStop(1, rgbA(0))
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, w, h)
+    ctx.fillStyle = rgbA(0.16 * a)
+    ctx.fillRect(0, 0, w, h)
+    ctx.restore()
+  }
+  // bloom / halation: highlights glow and bleed warm light into their surroundings
+  if (adj.glow > 0) {
+    const s = blurred(12)
+    const sc = s.getContext('2d', { willReadFrequently: true })
+    const gd = sc.getImageData(0, 0, s.width, s.height)
+    const p = gd.data
+    for (let i = 0; i < p.length; i += 4) {
+      const L = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]
+      const k = Math.max(0, (L - 105) / 150) ** 1.25
+      p[i] = Math.min(255, p[i] * k * (0.55 + 0.45 * (hz[0] / 255)) * 1.25)
+      p[i + 1] = Math.min(255, p[i + 1] * k * (0.55 + 0.45 * (hz[1] / 255)) * 1.25)
+      p[i + 2] = Math.min(255, p[i + 2] * k * (0.55 + 0.45 * (hz[2] / 255)) * 1.25)
+    }
+    sc.putImageData(gd, 0, 0)
+    const wide = makeCanvas(s.width / 2.5, s.height / 2.5) // second, wider halo
+    wide.getContext('2d').drawImage(s, 0, 0, wide.width, wide.height)
+    ctx.save()
+    ctx.globalCompositeOperation = 'screen'
+    ctx.imageSmoothingQuality = 'high'
+    ctx.globalAlpha = Math.min(1, (adj.glow / 100) * 1.3 * fx)
+    ctx.drawImage(s, 0, 0, w, h)
+    ctx.globalAlpha = Math.min(1, (adj.glow / 100) * 1.1 * fx)
+    ctx.drawImage(wide, 0, 0, w, h)
+    ctx.restore()
+  }
   // ---- film grain ----
   if (adj.grain > 0) {
     ctx.globalCompositeOperation = 'overlay'
@@ -313,6 +383,70 @@ export function renderFilteredPhoto(img, adj, crop, w, h, { cache = true } = {})
     if (LRU.size > LRU_MAX) LRU.delete(LRU.keys().next().value)
   }
   return c
+}
+
+/**
+ * Reference "look": (1) the photo's brightness curve is matched to the reference photo,
+ * (2) the reference's colour cast per tone band (shadows -> highlights) is applied as split-toning,
+ * (3) saturation moves toward the reference's. Image detail is untouched, so whites stay clean.
+ */
+function applyLook(ctx, w, h, ref, strength, castMax = 90) {
+  const id = ctx.getImageData(0, 0, w, h)
+  const d = id.data
+  // source luminance histogram -> tone curve toward the reference
+  const hist = new Float64Array(256)
+  let chromaSum = 0
+  let samples = 0
+  const step = Math.max(1, Math.floor((w * h) / 250000)) * 4
+  for (let i = 0; i < d.length; i += step) {
+    const L = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+    hist[Math.round(L)]++
+    chromaSum += Math.hypot(d[i] - L, d[i + 1] - L, d[i + 2] - L)
+    samples++
+  }
+  const total = samples || 1
+  const curve = new Float32Array(256)
+  let acc = 0
+  for (let v = 0; v < 256; v++) {
+    acc += hist[v]
+    const q = Math.min(255, Math.round(((acc - hist[v] / 2) / total) * 255))
+    curve[v] = ref.lum[q]
+  }
+  const toneK = strength * 0.7 // keep some of the photo's own contrast
+  const sm = new Float32Array(256)
+  for (let v = 0; v < 256; v++) {
+    let a = 0, n = 0
+    for (let k = -6; k <= 6; k++) {
+      const j = v + k
+      if (j >= 0 && j < 256) (a += curve[j]), n++
+    }
+    sm[v] = a / n
+  }
+  for (let v = 1; v < 256; v++) if (sm[v] < sm[v - 1]) sm[v] = sm[v - 1]
+  for (let v = 0; v < 256; v++) sm[v] = v + (sm[v] - v) * toneK
+  // split-tone table: interpolated tint for every output luminance
+  const tint = new Float32Array(256 * 3)
+  for (let v = 0; v < 256; v++) {
+    const f = Math.min(15, Math.max(0, v / 16 - 0.5))
+    const i0 = Math.floor(f), i1 = Math.min(15, i0 + 1), t = f - i0
+    for (let c = 0; c < 3; c++) tint[v * 3 + c] = (ref.tint[i0][c] * (1 - t) + ref.tint[i1][c] * t) * strength * 0.85
+    // cap the cast (strongest in mid-tones, gentle in deep shadows) so hair/skin never turn a flat colour
+    const cap = castMax * Math.min(1, 0.25 + v / 150)
+    const m = Math.hypot(tint[v * 3], tint[v * 3 + 1], tint[v * 3 + 2])
+    if (m > cap) for (let c = 0; c < 3; c++) tint[v * 3 + c] *= cap / m
+  }
+  const srcChroma = chromaSum / total || 1
+  const satK = 1 + (Math.min(1.45, Math.max(0.6, ref.chroma / srcChroma)) - 1) * strength
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2]
+    const L = 0.299 * r + 0.587 * g + 0.114 * b
+    const L2 = sm[Math.round(L)]
+    const t = Math.round(L2) * 3
+    d[i] = L2 + (r - L) * satK + tint[t]
+    d[i + 1] = L2 + (g - L) * satK + tint[t + 1]
+    d[i + 2] = L2 + (b - L) * satK + tint[t + 2]
+  }
+  ctx.putImageData(id, 0, 0)
 }
 
 /* ---------------- text drawing ---------------- */
@@ -871,6 +1005,7 @@ export function renderPhotoScene(ctx, W, H, s, { skipLayers = false, cache = tru
     if (image) {
       const fp = renderFilteredPhoto(image, adj, crop, S.w, S.h, { cache })
       ctx.drawImage(fp, S.x, S.y, S.w, S.h)
+      if (s.doodle?.style && s.doodle.style !== 'none') drawDoodle(ctx, fp, S, s.doodle)
     } else {
       const g = ctx.createLinearGradient(S.x, S.y, S.x + S.w, S.y + S.h)
       g.addColorStop(0, '#efe6d8')

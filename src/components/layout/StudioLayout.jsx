@@ -20,7 +20,7 @@ function ZoomBar() {
       <div className="glass pointer-events-auto flex items-center gap-1 rounded-full border border-sand p-1 shadow-soft">
         {Object.keys(ASPECTS).map((k) => (
           <button key={k} onClick={() => setAspect(k)} className={`h-8 rounded-full px-3 text-[11.5px] font-bold transition ${aspect === k ? 'bg-espresso text-oat' : 'text-taupe hover:text-espresso'}`}>
-            {k}
+            {ASPECTS[k].label}
           </button>
         ))}
         <span className="mx-1 h-5 w-px bg-sand" />
@@ -78,6 +78,11 @@ export default function StudioLayout() {
     setSheet(null)
   }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // lets panels open another tool (e.g. Photos -> "With a frame" opens Frames)
+  useEffect(() => {
+    useStudio.setState({ openTool: (id) => (isMd ? setLeftTab(id) : setSheet(id)) })
+  }, [isMd])
+
   // jump to the layer inspector when something gets selected
   useEffect(() => {
     if (!selectedId || mode !== 'photo') return
@@ -106,8 +111,9 @@ export default function StudioLayout() {
         {/* mobile bottom sheet */}
         <AnimatePresence initial={false}>
           {sheetTool && (
-            <motion.div key="sheet" initial={{ height: 0 }} animate={{ height: '46dvh' }} exit={{ height: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 38 }} className="glass overflow-hidden rounded-t-[26px] border-t border-sand shadow-[0_-12px_40px_-20px_rgba(44,37,35,.35)] md:hidden" style={{ transform: sheetDrag ? `translateY(${sheetDrag}px)` : undefined, transition: sheetDrag ? 'none' : 'transform .2s ease' }}>
-              <div className="flex h-full flex-col">
+            <motion.div key="sheet" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 38 }} className="glass overflow-hidden rounded-t-[26px] border-t border-sand shadow-[0_-12px_40px_-20px_rgba(44,37,35,.35)] md:hidden" style={{ transform: sheetDrag ? `translateY(${sheetDrag}px)` : undefined, transition: sheetDrag ? 'none' : 'transform .2s ease' }}>
+              {/* fits its content (no empty space), never taller than ~half the screen */}
+              <div className="flex max-h-[46dvh] flex-col">
                 {/* swipe this header down to close */}
                 <div className="touch-none" onPointerDown={startSheetDrag} onPointerMove={moveSheetDrag} onPointerUp={endSheetDrag} onPointerCancel={endSheetDrag}>
                 <div className="flex cursor-grab items-center justify-between px-4 pb-1.5 pt-2.5">

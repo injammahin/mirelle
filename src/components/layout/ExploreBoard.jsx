@@ -51,24 +51,26 @@ export default function ExploreBoard() {
     <div className="soft-scroll h-full overflow-y-auto">
       <div className="mx-auto max-w-[1500px] px-3 pb-28 pt-4 sm:px-5 md:px-8 md:pb-12 md:pt-6">
         {/* hero */}
-        <section className="relative mb-6 overflow-hidden rounded-[28px] border border-sand bg-gradient-to-br from-[#f6ede1] via-[#f3e7da] to-[#eadfce] p-5 sm:p-8 md:mb-8 md:p-10">
-          <div className="pointer-events-none absolute -right-10 -top-16 h-64 w-64 rounded-full bg-terracotta/15 blur-3xl" />
+        <section className="relative mb-6 overflow-hidden rounded-[28px] border border-sand/70 bg-gradient-to-br from-[#faf5ee] via-[#f6eee4] to-[#efe4d6] px-6 py-7 sm:p-8 md:mb-8 md:p-12">
+          <div className="pointer-events-none absolute -right-10 -top-16 h-64 w-64 rounded-full bg-terracotta/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-sage/20 blur-3xl" />
           <div className="relative grid items-center gap-6 md:grid-cols-[1.2fr_1fr]">
             <div>
-              <span className="eyebrow inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-terracotta">
-                <Sparkles size={12} /> Aesthetic photo frames
-              </span>
-              <h1 className="mt-3 font-serif text-[34px] leading-[1.05] text-espresso sm:text-5xl md:text-[56px]">
-                Make your camera roll <em className="text-terracotta">Pinterest-worthy.</em>
+              <p className="flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.32em] text-taupe">
+                <span className="h-px w-6 bg-taupe/40" /> Mirelle · aesthetic studio
+              </p>
+              <h1 className="mt-4 font-serif text-[30px] font-normal leading-[1.15] text-espresso sm:text-[38px] md:text-[44px]">
+                <em className="font-normal">little frames</em> for your
+                <br />
+                softest moments <span className="text-terracotta/80">✦</span>
               </h1>
-              <p className="mt-3 max-w-md text-[14.5px] leading-relaxed text-taupe">{all.length} handpicked aesthetic frames. Pick one and your photo drops perfectly into place, then save it straight to your gallery in HD.</p>
-              <div className="mt-5 flex flex-wrap gap-2.5">
-                <button className="btn-primary h-11 px-5" onClick={() => setMode('photo')}>
-                  <Camera size={16} /> Open Photo Studio
+              <p className="mt-3 max-w-sm text-[13.5px] leading-relaxed text-taupe">Pressed flowers, film light & paper keepsakes. Choose a frame and your photo settles right in.</p>
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <button className="inline-flex h-10 items-center gap-2 rounded-full bg-espresso px-5 text-[13px] font-medium text-oat transition hover:bg-espresso/90" onClick={() => setMode('photo')}>
+                  <Camera size={15} strokeWidth={1.7} /> Start creating
                 </button>
-                <button className="btn-ghost h-11 px-5" onClick={() => setMode('letter')}>
-                  <Mail size={16} /> Write a Letter
+                <button className="inline-flex h-10 items-center gap-2 rounded-full px-4 text-[13px] font-medium text-espresso/80 underline-offset-4 transition hover:underline" onClick={() => setMode('letter')}>
+                  <Mail size={15} strokeWidth={1.7} /> Write a letter
                 </button>
               </div>
             </div>
@@ -95,11 +97,16 @@ export default function ExploreBoard() {
         </section>
 
         {/* search + categories */}
-        <div className="sticky top-0 z-20 -mx-3 mb-5 bg-oat/90 px-3 py-2 backdrop-blur sm:-mx-5 sm:px-5 md:-mx-8 md:px-8">
+        <div className="sticky top-0 z-20 -mx-3 mb-5 bg-oat/85 px-3 py-3 backdrop-blur-md sm:-mx-5 sm:px-5 md:-mx-8 md:px-8">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
-            <label className="flex h-11 flex-1 items-center gap-2.5 rounded-full bg-linen px-4 ring-terracotta/20 transition focus-within:bg-white focus-within:ring-4 lg:max-w-md">
-              <Search size={17} className="text-taupe" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search frames: rose, peony, ocean…" className="w-full bg-transparent text-[14px] outline-none placeholder:text-taupe/70" />
+            <label className="group flex h-12 w-full shrink-0 items-center gap-3 rounded-2xl border border-sand/80 bg-white/80 px-4 shadow-[0_6px_20px_-14px_rgba(60,40,30,0.35)] backdrop-blur transition focus-within:border-terracotta/40 focus-within:bg-white focus-within:shadow-[0_8px_26px_-14px_rgba(200,125,101,0.55)] lg:max-w-md">
+              <Search size={17} strokeWidth={1.8} className="shrink-0 text-taupe transition group-focus-within:text-terracotta" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search frames — rose, sunflower, vintage…" className="min-w-0 flex-1 bg-transparent font-serif text-[15px] italic text-espresso outline-none placeholder:not-italic placeholder:font-sans placeholder:text-[13.5px] placeholder:text-taupe/70" />
+              {q && (
+                <button onClick={() => setQ('')} className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-taupe hover:bg-linen" aria-label="Clear search">
+                  Clear
+                </button>
+              )}
             </label>
             <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
               {CATS.map(({ id, name, icon: Icon }) => (

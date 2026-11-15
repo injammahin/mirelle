@@ -16,6 +16,17 @@ const p = (o) => ({ ...base, ...o })
 
 export const FILTERS = [
   { id: 'original', name: 'Original', mood: 'As captured', params: p({}) },
+  // Pinterest looks: matched to real reference photos (data/looks.json)
+  { id: 'window-glow', name: 'Window Glow', mood: 'Sun through the curtains', look: true, params: p({ look: 'window-glow', lookStrength: 85, glow: 70, soft: 34, haze: 52, hazeFrom: [0.12, 0.08], hazeColor: [255, 214, 176], grain: 4 }) },
+  { id: 'peach-bloom', name: 'Peach Bloom', mood: 'Glowing peach petals', look: true, params: p({ look: 'peach-bloom', lookStrength: 85, glow: 85, soft: 28, haze: 30, hazeFrom: [0.5, 0.15], hazeColor: [255, 196, 170], contrast: 6 }) },
+  { id: 'linen-blush', name: 'Linen Blush', mood: 'Soft & airy pink', look: true, params: p({ look: 'linen-blush', lookStrength: 80, lookCast: 26, glow: 36, soft: 24, haze: 30, hazeFrom: [0.2, 0], hazeColor: [255, 228, 232] }) },
+  { id: 'afternoon-haze', name: 'Afternoon Haze', mood: 'Hazy golden light', look: true, params: p({ look: 'afternoon-haze', lookStrength: 85, glow: 55, soft: 22, haze: 46, hazeFrom: [0.85, 0.1], hazeColor: [255, 222, 170], fade: 6 }) },
+  { id: 'super8-rose', name: 'Super 8 Rose', mood: 'Faded film memory', look: true, params: p({ look: 'super8-rose', lookStrength: 85, glow: 40, soft: 32, haze: 22, hazeFrom: [0.5, 0.3], hazeColor: [255, 200, 220], grain: 16, fade: 6 }) },
+  { id: 'golden-wall', name: 'Golden Wall', mood: 'Warm sunset shadows', look: true, params: p({ look: 'golden-wall', lookStrength: 85, glow: 30, soft: 10, haze: 44, hazeFrom: [0.9, 0.2], hazeColor: [255, 170, 90] }) },
+  { id: 'lamp-light', name: 'Lamp Light', mood: 'Cosy tungsten night', look: true, params: p({ look: 'lamp-light', lookStrength: 85, glow: 34, soft: 18, haze: 48, hazeFrom: [0.1, 0.12], hazeColor: [255, 160, 80], grain: 12, vignette: 18 }) },
+  { id: 'sunlit-table', name: 'Sunlit Table', mood: 'Rich golden hour', look: true, params: p({ look: 'sunlit-table', lookStrength: 80, glow: 34, soft: 10, haze: 36, hazeFrom: [0.15, 0.05], hazeColor: [255, 205, 140] }) },
+  { id: 'candlelit-pink', name: 'Candlelit Pink', mood: 'Moody warm evening', look: true, params: p({ look: 'candlelit-pink', lookStrength: 80, lookCast: 50, glow: 30, soft: 14, haze: 22, hazeFrom: [0.1, 0.1], hazeColor: [255, 180, 120], vignette: 14 }) },
+  { id: 'paris-street', name: 'Paris Street', mood: 'Muted cinematic film', look: true, params: p({ look: 'paris-street', lookStrength: 85, glow: 34, soft: 16, haze: 30, hazeFrom: [0.1, 0.05], hazeColor: [255, 226, 190], fade: 8, grain: 8 }) },
   {
     id: 'golden-hour',
     name: 'Golden Hour',
@@ -92,4 +103,6 @@ export const ASPECTS = {
   '1:1': { label: '1:1', name: 'Square', w: 1, h: 1 },
   '4:5': { label: '4:5', name: 'Portrait', w: 4, h: 5 },
   '9:16': { label: '9:16', name: 'Pin / Story', w: 9, h: 16 },
+  // matches the current photo; PhotoStage updates w/h when a photo loads
+  original: { label: 'Original', name: 'Your photo', w: 4, h: 5 },
 }

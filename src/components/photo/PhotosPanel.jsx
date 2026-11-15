@@ -31,6 +31,7 @@ export default function PhotosPanel() {
   const photo = useStudio((s) => s.photo)
   const setPhoto = useStudio((s) => s.setPhoto)
   const showToast = useStudio((s) => s.showToast)
+  const frameId = useStudio((s) => s.frameId)
   const inputRef = useRef(null)
   const [drag, setDrag] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -42,7 +43,7 @@ export default function PhotosPanel() {
     try {
       const src = await fileToDataUrl(file)
       setPhoto({ src, name: file.name, sampleId: null })
-      showToast('Photo added — now make it aesthetic ✨')
+      showToast('Photo added ✨ Keep a frame or choose Photo only')
     } catch {
       showToast('Could not read that image')
     } finally {
@@ -72,6 +73,29 @@ export default function PhotosPanel() {
         <p className="font-serif text-[17px] text-espresso">{busy ? 'Preparing your photo…' : 'Drop your photo here'}</p>
         <p className="mt-1 text-xs text-taupe">or tap to browse · JPG, PNG, WEBP · up to 4K kept</p>
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
+      </div>
+
+      <div>
+        <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-taupe">How do you want to edit?</p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            onClick={() => {
+              useStudio.getState().setFrame('none')
+              showToast('Photo only — try Filters, Adjust and Stickers')
+            }}
+            className={`tile flex flex-col items-start gap-1 p-3 text-left ${frameId === 'none' ? 'tile-active' : ''}`}
+          >
+            <span className="text-[13px] font-semibold text-espresso">Photo only</span>
+            <span className="text-[11px] leading-snug text-taupe">No frame. Filters, adjust & stickers on your photo.</span>
+          </button>
+          <button
+            onClick={() => useStudio.getState().openTool?.('frames')}
+            className={`tile flex flex-col items-start gap-1 p-3 text-left ${frameId !== 'none' ? 'tile-active' : ''}`}
+          >
+            <span className="text-[13px] font-semibold text-espresso">With a frame</span>
+            <span className="text-[11px] leading-snug text-taupe">Pick an aesthetic frame. Your photo drops right in.</span>
+          </button>
+        </div>
       </div>
 
     </div>

@@ -36,6 +36,13 @@ export default function PhotoStage() {
   const { select, updateLayer, removeLayer, duplicateLayer, pushHistory } = useStudio.getState()
 
   const img = useImage(photo.src)
+  useEffect(() => {
+    if (!img) return
+    ASPECTS.original.w = img.naturalWidth || img.width
+    ASPECTS.original.h = img.naturalHeight || img.height
+    if (useStudio.getState().aspect === 'original') useStudio.setState((s) => ({ zoom: s.zoom })) // re-measure
+  }, [img])
+  const doodle = useStudio((s) => s.doodle)
   const slotPhotos = useStudio((s) => s.slotPhotos)
   const slotCrops = useStudio((s) => s.slotCrops)
   // load each extra slot's own photo
@@ -69,10 +76,10 @@ export default function PhotoStage() {
       const H = Math.round(dispH * scale)
       if (c.width !== W) c.width = W
       if (c.height !== H) c.height = H
-      renderPhotoScene(c.getContext('2d'), W, H, { image: img, adj, crop, frameId, captions, layers, slotImages, slotCrops })
+      renderPhotoScene(c.getContext('2d'), W, H, { image: img, adj, crop, frameId, captions, layers, slotImages, slotCrops, doodle })
     })
     return () => cancelAnimationFrame(raf)
-  }, [img, adj, crop, frameId, captions, layers, slotImages, slotCrops, dispW, dispH, av, fv])
+  }, [img, adj, crop, frameId, captions, layers, slotImages, slotCrops, doodle, dispW, dispH, av, fv])
 
   // ---- keyboard shortcuts ----
   useEffect(() => {
