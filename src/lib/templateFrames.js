@@ -3,7 +3,7 @@
 // outside (flowers, tape, torn edges) is cut out into an overlay that is drawn over the photo.
 import { loadImage, getImage } from './assets'
 
-const ANALYSIS_MAX = 1400 // px on the long side for slot + overlay analysis
+const ANALYSIS_MAX = 1200 // px on the long side for slot + overlay analysis
 
 /* ---------------- registry helpers ---------------- */
 const titleCase = (s) => s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())

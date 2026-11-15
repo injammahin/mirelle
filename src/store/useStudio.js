@@ -48,7 +48,8 @@ export const useStudio = create((set, get) => ({
   setFrame: (frameId) => {
     get().pushHistory()
     const f = FRAME_MAP[frameId]
-    const patch = { frameId, crop: { zoom: 1, x: 0, y: 0 } }
+    // a new frame starts clean: no stickers carried over (undo brings them back)
+    const patch = { frameId, crop: { zoom: 1, x: 0, y: 0 }, layers: get().layers.filter((l) => l.type !== 'sticker'), selectedId: null }
     if (f?.kind === 'template') patch.aspect = templateAspect(f)
     set(patch)
   },
@@ -166,3 +167,35 @@ export const frameHasCaption = (id) => !!FRAME_MAP[id]?.hasCaption
 
 // Restore frames the user uploaded in earlier sessions.
 loadCustomFrames().then((n) => n && useStudio.getState().bumpFrames())
+
+/* ---- keep the user's place across reloads (tab session only) ---- */
+const SESSION_KEY = 'mirelle:session'
+const PERSIST = ['mode', 'aspect', 'frameId', 'crop', 'filterId', 'adj', 'captions', 'layers', 'vibe', 'photo']
+try {
+  const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null')
+  if (saved) {
+    const patch = {}
+    for (const k of PERSIST) if (saved[k] !== undefined) patch[k] = saved[k]
+    // only restore the frame if it still exists (uploaded frames load asynchronously)
+    if (patch.frameId && !FRAME_MAP[patch.frameId] && !patch.frameId.startsWith('tpl-mine-')) delete patch.frameId
+    // stickers placed from the bundled set must still exist
+    if (patch.layers) patch.layers = patch.layers.filter((l) => l.type !== 'sticker' || STICKER_MAP[l.stickerId] || l.stickerId.startsWith('img-mine-'))
+    useStudio.setState(patch)
+  }
+} catch {
+  /* storage unavailable: start fresh */
+}
+let saveTimer
+useStudio.subscribe((s) => {
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    try {
+      const out = Object.fromEntries(PERSIST.map((k) => [k, s[k]]))
+      // blob: URLs die with the page; very large data URLs would overflow storage
+      if (out.photo?.src?.startsWith('blob:') || (out.photo?.src?.length || 0) > 3_000_000) delete out.photo
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(out))
+    } catch {
+      /* quota or private mode: ignore */
+    }
+  }, 300)
+})

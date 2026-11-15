@@ -20,6 +20,8 @@ export function useFramedExamples(limit = Infinity) {
   useEffect(() => {
     let alive = true
     ;(async () => {
+      // let the page paint first, then render examples in the background
+      await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 600 }) : setTimeout(r, 120)))
       for (const [i, f] of frames.entries()) {
         const ex = exampleFor(i)
         if (!ex) return

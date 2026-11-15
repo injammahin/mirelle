@@ -22,12 +22,12 @@ export default function StickersPanel() {
   const cats = useMemo(() => [...new Set(real.map((s) => s.category))], [real])
   const list = cat === 'all' ? pool : pool.filter((s) => s.category === cat)
 
-  // cut out + trim every sticker once, then refresh previews
+  // uploaded stickers need a one-time cut-out to build their preview; bundled ones ship with thumbnails
   useEffect(() => {
     let alive = true
     ;(async () => {
       for (const s of real) {
-        if (s.ready) continue
+        if (s.ready || s.prepared) continue
         await prepareSticker(s).catch(() => {})
         if (alive) setTick((t) => t + 1)
       }
@@ -79,15 +79,15 @@ export default function StickersPanel() {
               key={s.id}
               role="button"
               tabIndex={0}
-              onClick={() => {
-                if (s.kind === 'image' && !s.ready) return
+              onClick={async () => {
+                await prepareSticker(s).catch(() => {}) // know the real size before placing
                 addSticker(s.id)
                 showToast(`${s.name} added — drag it into place`)
               }}
               className="tile group relative flex aspect-square cursor-pointer flex-col items-center justify-center p-2"
               title={s.name}
             >
-              {src ? <img src={src} alt={s.name} className="max-h-[78%] max-w-[88%] object-contain drop-shadow-sm transition group-hover:scale-110" /> : <div className="h-3/4 w-3/4 animate-pulse rounded-xl bg-linen" />}
+              {src ? <img src={src} alt={s.name} loading="lazy" decoding="async" className="max-h-[78%] max-w-[88%] object-contain drop-shadow-sm transition group-hover:scale-110" /> : <div className="h-3/4 w-3/4 animate-pulse rounded-xl bg-linen" />}
               <span className="mt-1 line-clamp-1 text-[10px] font-medium text-taupe">{s.name}</span>
               {s.custom ? (
                 <button

@@ -8,8 +8,9 @@ const MAX_SIDE = 1800 // px; plenty for 4K exports, still light on memory
 
 const titleCase = (s) => s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
-export function makeImageSticker({ id, name, src, category = 'stickers', custom = false }) {
-  return { id, name, src, category, custom, kind: 'image', tags: ['img:' + category], defaultW: 0.3, w: 1, h: 1, ready: false }
+// prepared: the file is already a cut-out, trimmed sticker (bundled set) -> no in-browser processing
+export function makeImageSticker({ id, name, src, category = 'stickers', custom = false, prepared = false, thumb = null }) {
+  return { id, name, src, category, custom, prepared, kind: 'image', tags: ['img:' + category], defaultW: 0.3, w: 1, h: 1, ready: false, preview: thumb }
 }
 
 export function registerSticker(def) {
@@ -27,6 +28,7 @@ export function unregisterSticker(id) {
 /** Bundled stickers: src/assets/stickers/<category>/*.(png|jpg|webp) */
 export function discoverStickers() {
   const files = import.meta.glob('../assets/stickers/**/*.{png,jpg,jpeg,webp,PNG,JPG,JPEG,WEBP}', { eager: true, query: '?url', import: 'default' })
+  const thumbs = import.meta.glob('../assets/sticker-thumbs/**/*.webp', { eager: true, query: '?url', import: 'default' })
   Object.entries(files)
     .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
     .reverse()
@@ -35,7 +37,9 @@ export function discoverStickers() {
       const base = parts.pop().replace(/\.[^.]+$/, '')
       const folder = parts[parts.length - 1]
       const category = folder === 'stickers' ? 'stickers' : folder
-      registerSticker(makeImageSticker({ id: `img-${category}-${base}`, name: titleCase(base), src: url, category }))
+      const thumb = thumbs[path.replace('/stickers/', '/sticker-thumbs/').replace(/\.[^.]+$/, '.webp')] || null
+      // bundled files with a thumbnail were pre-processed offline (cut out, trimmed, die-cut border)
+      registerSticker(makeImageSticker({ id: `img-${category}-${base}`, name: titleCase(base), src: url, category, prepared: !!thumb, thumb }))
     })
 }
 
@@ -139,15 +143,24 @@ function finish(def, img) {
 }
 
 /** Synchronous accessor for the renderer (null until the image has loaded). */
+function usePrepared(def, img) {
+  def.w = img.naturalWidth
+  def.h = img.naturalHeight
+  def.ready = true
+  return img
+}
+
 export function getStickerCanvas(def) {
   const hit = processed.get(def.id)
   if (hit) return hit
   const img = getImage('sti:' + def.src, def.src)
-  return img ? finish(def, img) : null
+  if (!img) return null
+  return def.prepared ? usePrepared(def, img) : finish(def, img)
 }
 
 export async function prepareSticker(def) {
   if (processed.has(def.id)) return processed.get(def.id)
   const img = await loadImage('sti:' + def.src, def.src)
+  if (def.prepared) return usePrepared(def, img)
   return processed.get(def.id) || finish(def, img)
 }
