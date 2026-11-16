@@ -165,6 +165,18 @@ export default function LetterStickers({ dispW, dispH, layout }) {
               onPlus={() => setSeal({ size: clamp(+((seal.size || 1) + 0.1).toFixed(2), 0.4, 3) })}
               style={{ left: '50%', top: -44, transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}
             />
+            <button
+              onPointerDown={stop}
+              onClick={() => {
+                setSeal({ enabled: false })
+                useStudio.setState({ letterSel: null })
+              }}
+              className="absolute -bottom-4 -left-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white text-espresso shadow-soft hover:text-red-600"
+              title="Remove seal"
+              aria-label="Remove seal"
+            >
+              <Trash2 size={14} />
+            </button>
             <div onPointerDown={(e) => begin(e, 'seal', 'transform')} {...h} className={`${handle} -bottom-4 -right-4 cursor-nwse-resize bg-terracotta text-white`} title="Drag to resize">
               <Maximize2 size={13} />
             </div>

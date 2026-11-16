@@ -5,6 +5,7 @@ import { ASPECTS } from '../../data/filters'
 import { EXPORT_SIZES, dims, exportArtwork } from '../../lib/exporter'
 import Segmented from '../ui/Segmented'
 import Section from '../ui/Section'
+import ShareLetter from '../letter/ShareLetter'
 
 export default function ExportPanel({ kind }) {
   const aspect = useStudio((s) => s.aspect)
@@ -30,6 +31,7 @@ export default function ExportPanel({ kind }) {
 
   return (
     <div className="space-y-5">
+      {kind === 'letter' && <ShareLetter />}
       <Section title="Aspect ratio">
         <div className="grid grid-cols-3 gap-2">
           {Object.entries(ASPECTS).map(([k, a]) => (
