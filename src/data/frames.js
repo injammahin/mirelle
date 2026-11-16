@@ -29,7 +29,7 @@ export function unregisterFrame(id) {
   delete FRAME_MAP[id]
 }
 
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+const cap = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase())
 export function frameFamilies() {
   const cats = [...new Set(FRAMES.filter((f) => f.kind === 'template' && !f.custom).map((f) => f.category))]
   return [

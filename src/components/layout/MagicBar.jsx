@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Sparkles, Undo2, Redo2, Lightbulb } from 'lucide-react'
+import { WandSparkles, Undo2, Redo2, Lightbulb, ChevronLeft } from 'lucide-react'
 import { FRAME_MAP } from '../../data/frames'
 import { STICKER_MAP } from '../../data/stickers'
 import { loadTemplate, templateAspect } from '../../lib/templateFrames'
@@ -90,6 +90,9 @@ export default function MagicBar() {
 
   return (
     <div className="flex items-center gap-2 border-b border-sand/80 bg-oat/80 px-3 py-2 md:px-5 md:py-3">
+      <button onClick={() => (window.history.state?.mirelle ? window.history.back() : useStudio.getState().setMode('explore'))} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-sand bg-white text-espresso shadow-soft transition hover:bg-linen" aria-label="Back to home" title="Back">
+        <ChevronLeft size={18} />
+      </button>
       <div className="no-scrollbar flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
         {VIBES.map((v) => (
           <button key={v.id} onClick={() => setVibe(v.id)} className={`chip ${vibe === v.id ? 'chip-active' : ''}`}>
@@ -115,8 +118,8 @@ export default function MagicBar() {
       )}
       <div className="relative shrink-0">
         <Burst bursts={bursts} />
-        <motion.button whileTap={{ scale: 0.94 }} onClick={go} className="magic-btn btn h-10 px-4 text-white md:px-5">
-          <Sparkles size={16} className="relative z-10" />
+        <motion.button whileTap={{ scale: 0.94 }} onClick={go} className="magic-btn btn h-10 px-4 text-white md:px-5" aria-label="Auto style">
+          <WandSparkles size={16} className="magic-wand relative z-10" />
           <span className="relative z-10 hidden min-[370px]:inline">Auto</span>
         </motion.button>
       </div>

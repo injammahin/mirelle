@@ -28,11 +28,12 @@ export function discoverTemplates() {
       const file = parts.pop()
       const base = file.replace(/\.[^.]+$/, '')
       const folder = parts[parts.length - 1]
-      const category = folder === 'frames' ? 'pinterest' : folder
+      const pathCategory = folder === 'frames' ? 'pinterest' : folder
       const meta = metas[`../assets/frame-meta/${folder}/${base}.json`]
+      const category = meta?.category || pathCategory
       const overlaySrc = overlays[`../assets/frame-overlays/${folder}/${base}.webp`] || null
       const preview = previews[`../assets/frame-previews/${folder}/${base}.webp`] || null
-      return { ...makeTemplateFrame({ id: 'tpl-' + category + '-' + base, name: meta?.name || titleCase(base), src: url, category, override: TEMPLATE_OVERRIDES[base], meta, overlaySrc }), preview }
+      return { ...makeTemplateFrame({ id: 'tpl-' + pathCategory + '-' + base, name: meta?.name || titleCase(base), src: url, category, override: TEMPLATE_OVERRIDES[base], meta, overlaySrc }), preview }
     })
     // hand-picked originals first, then generated frames in catalogue order
     .sort((a, b) => (!!a.meta - !!b.meta) || (a.meta?.order ?? 0) - (b.meta?.order ?? 0) || a.name.localeCompare(b.name))

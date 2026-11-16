@@ -114,37 +114,71 @@ $noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width=
   }
 }
 
-// Glowing magic button
+// Soft, slow glint for the automatic styling action.
 @keyframes magic-sheen {
-  0% {
-    background-position: -150% 0;
+  0%,
+  68% {
+    transform: translateX(-170%) skewX(-18deg);
+    opacity: 0;
+  }
+  76% {
+    opacity: 0.55;
   }
   100% {
-    background-position: 250% 0;
+    transform: translateX(360%) skewX(-18deg);
+    opacity: 0;
   }
 }
 @keyframes magic-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(212, 168, 90, 0.35), 0 8px 26px -6px rgba(200, 125, 101, 0.55);
+    box-shadow: 0 0 0 1px rgba(212, 168, 90, 0.2), 0 6px 18px -8px rgba(200, 125, 101, 0.35);
   }
   50% {
-    box-shadow: 0 0 0 1px rgba(212, 168, 90, 0.6), 0 10px 34px -4px rgba(212, 168, 90, 0.75);
+    box-shadow: 0 0 0 1px rgba(212, 168, 90, 0.38), 0 7px 22px -8px rgba(212, 168, 90, 0.48);
+  }
+}
+@keyframes magic-wand-twinkle {
+  0%,
+  78%,
+  100% {
+    transform: rotate(0) scale(1);
+    filter: none;
+  }
+  84% {
+    transform: rotate(-10deg) scale(1.12);
+    filter: drop-shadow(0 0 4px rgba(255, 246, 200, 0.85));
+  }
+  90% {
+    transform: rotate(3deg) scale(1);
+    filter: none;
   }
 }
 .magic-btn {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   background: linear-gradient(120deg, #c87d65 0%, #d4a85a 55%, #c87d65 100%);
-  animation: magic-pulse 2.8s ease-in-out infinite;
+  animation: magic-pulse 3.8s ease-in-out infinite;
   &::after {
     content: '';
     position: absolute;
-    inset: 0;
-    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
-    background-size: 200% 100%;
-    animation: magic-sheen 2.6s linear infinite;
+    inset: 0 auto 0 -35%;
+    width: 32%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+    animation: magic-sheen 4.8s ease-in-out infinite;
     pointer-events: none;
+  }
+}
+.magic-wand {
+  animation: magic-wand-twinkle 3.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-btn,
+  .magic-btn::after,
+  .magic-wand {
+    animation: none;
   }
 }
 

@@ -52,6 +52,7 @@ export default function StudioLayout() {
   const [leftTab, setLeftTab] = useState(tools[0].id)
   const [rightTab, setRightTab] = useState(rightTools[0].id)
   const [sheet, setSheet] = useState(null)
+  const sheetRef = useRef(null)
   // swipe-down-to-close for the mobile sheet
   const [sheetDrag, setSheetDrag] = useState(0)
   const dragStart = useRef(null)
@@ -83,6 +84,15 @@ export default function StudioLayout() {
     useStudio.setState({ openTool: (id) => (isMd ? setLeftTab(id) : setSheet(id)) })
   }, [isMd])
 
+  useEffect(() => {
+    if (!sheet) return
+    const closeOutside = (e) => {
+      if (!sheetRef.current?.contains(e.target)) setSheet(null)
+    }
+    document.addEventListener('pointerdown', closeOutside, true)
+    return () => document.removeEventListener('pointerdown', closeOutside, true)
+  }, [sheet])
+
   // jump to the layer inspector when something gets selected
   useEffect(() => {
     if (!selectedId || mode !== 'photo') return
@@ -111,7 +121,7 @@ export default function StudioLayout() {
         {/* mobile bottom sheet */}
         <AnimatePresence initial={false}>
           {sheetTool && (
-            <motion.div key="sheet" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 38 }} className="glass overflow-hidden rounded-t-[26px] border-t border-sand shadow-[0_-12px_40px_-20px_rgba(44,37,35,.35)] md:hidden" style={{ transform: sheetDrag ? `translateY(${sheetDrag}px)` : undefined, transition: sheetDrag ? 'none' : 'transform .2s ease' }}>
+            <motion.div ref={sheetRef} key="sheet" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 38 }} className="glass overflow-hidden rounded-t-[26px] border-t border-sand shadow-[0_-12px_40px_-20px_rgba(44,37,35,.35)] md:hidden" style={{ transform: sheetDrag ? `translateY(${sheetDrag}px)` : undefined, transition: sheetDrag ? 'none' : 'transform .2s ease' }}>
               {/* fits its content (no empty space), never taller than ~half the screen */}
               <div className="flex max-h-[46dvh] flex-col">
                 {/* swipe this header down to close */}

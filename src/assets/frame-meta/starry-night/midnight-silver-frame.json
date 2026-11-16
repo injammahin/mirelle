@@ -1,0 +1,7 @@
+{
+  "name": "Midnight Silver Frame",
+  "category": "vintage",
+  "order": 104,
+  "slot": [0.25, 0.31, 0.46, 0.30],
+  "cutouts": [[[0.25, 0.31], [0.71, 0.31], [0.71, 0.61], [0.25, 0.61]]]
+}

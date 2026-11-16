@@ -38,6 +38,16 @@ export default function App() {
     return () => (window.cancelIdleCallback ? cancelIdleCallback(id) : clearTimeout(id))
   }, [])
   const mode = useStudio((s) => s.mode)
+  // phone / browser back gesture: leaving the editor returns to Home instead of closing the site
+  useEffect(() => {
+    if (mode !== 'explore' && !window.history.state?.mirelle) window.history.pushState({ mirelle: mode }, '')
+    if (mode === 'explore' && window.history.state?.mirelle) window.history.replaceState(null, '')
+  }, [mode])
+  useEffect(() => {
+    const onPop = () => useStudio.getState().mode !== 'explore' && useStudio.getState().setMode('explore')
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-oat">
       <NavRail />

@@ -1,0 +1,7 @@
+{
+  "name": "Sunflower Art Collage",
+  "category": "sunflower",
+  "order": 112,
+  "slot": [0.06, 0.03, 0.88, 0.66],
+  "cutouts": [[[0.06, 0.03], [0.94, 0.03], [0.94, 0.69], [0.06, 0.69]]]
+}

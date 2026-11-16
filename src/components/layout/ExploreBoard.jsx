@@ -27,7 +27,7 @@ function Developing({ preview }) {
       <div className="develop-sheen absolute inset-0" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <span className="develop-spark text-[22px] text-terracotta/80">✦</span>
-        <span className="font-serif text-[13px] italic text-espresso/70">developing…</span>
+        <span className="font-serif text-[13px] italic text-espresso/70">creating…</span>
       </div>
     </div>
   )
@@ -36,7 +36,15 @@ function Developing({ preview }) {
 // Home: a premium gallery of real photo frames. Every card is a small pre-rendered image,
 // so the page does no canvas work at all and stays fast on any phone.
 // category = folder name in src/assets/frames/
-const CAT_INFO = { floral: ['Floral', Flower2], romantic: ['Romantic', Heart], sunflower: ['Sunflower', Sun], desi: ['Desi', Landmark], vintage: ['Vintage', CameraIcon] }
+const CAT_INFO = {
+  floral: ['Floral', Flower2],
+  romantic: ['Romantic', Heart],
+  sunflower: ['Sunflower', Sun],
+  desi: ['Desi', Landmark],
+  vintage: ['Vintage', CameraIcon],
+  'starry-night': ['Starry Night', Sparkles],
+  others: ['Others', Heart],
+}
 const catInfo = (id) => CAT_INFO[id] || [id.charAt(0).toUpperCase() + id.slice(1), Folder]
 
 function Card({ f, i, userImg, photoKey }) {
@@ -72,7 +80,7 @@ function Card({ f, i, userImg, photoKey }) {
       alive = false
     }
   }, [userImg, key, seen])
-  const show = userImg ? src : f.preview
+  const show = userImg ? src : (f.preview || f.src)
   return (
     <motion.button
       ref={ref}
@@ -87,7 +95,7 @@ function Card({ f, i, userImg, photoKey }) {
         {show ? (
           <img src={show} alt={f.name} loading={i < 8 ? 'eager' : 'lazy'} decoding="async" className="develop-in h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
         ) : (
-          <Developing preview={f.preview} />
+          <Developing preview={f.preview || f.src} />
         )}
       </div>
       <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/55 via-black/15 to-transparent px-3 pb-3 pt-10">
@@ -156,7 +164,7 @@ export default function ExploreBoard() {
   const framesVersion = useStudio((s) => s.framesVersion)
   const [cat, setCat] = useState('all')
   const [q, setQ] = useState('')
-  const all = useMemo(() => FRAMES.filter((f) => f.kind === 'template' && f.preview), [framesVersion])
+  const all = useMemo(() => FRAMES.filter((f) => f.kind === 'template'), [framesVersion])
   const list = useMemo(() => {
     const t = q.trim().toLowerCase()
     return all.filter((f) => (cat === 'all' || f.category === cat) && (!t || f.name.toLowerCase().includes(t) || f.category.includes(t)))
