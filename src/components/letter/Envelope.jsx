@@ -176,7 +176,7 @@ export function Closure({ w, h, deco, sealSrc, released, gone = false, ax = 0.5,
   const bandX = deco.closure === 'seal' ? ax : 0.3
   const go = { duration: 0.7, ease: [0.5, 0, 0.3, 1] }
   return (
-    <div className="pointer-events-none absolute inset-0" style={{ zIndex: 6 }}>
+    <div className="pointer-events-none absolute inset-0" style={{ zIndex: 6, transform: `translateZ(${Math.round(w * 0.07)}px)`, transformStyle: 'preserve-3d' }}>
       {/* band around the envelope */}
       {(deco.closure === 'ribbon' || deco.closure === 'twine') && (
         <motion.div
@@ -255,7 +255,7 @@ export function EnvelopeStickers({ list = [], w }) {
         alt=""
         draggable={false}
         className="pointer-events-none absolute max-w-none"
-        style={{ left: `${st.x * 100}%`, top: `${st.y * 100}%`, width: st.w * w, transform: `translate(-50%,-50%) rotate(${st.r || 0}deg)`, zIndex: 7, filter: 'drop-shadow(0 2px 3px rgba(40,30,20,.22))' }}
+        style={{ left: `${st.x * 100}%`, top: `${st.y * 100}%`, width: st.w * w, transform: `translate(-50%,-50%) translateZ(${Math.round(w * 0.045)}px) rotate(${st.r || 0}deg)`, zIndex: 7, filter: 'drop-shadow(0 2px 3px rgba(40,30,20,.22))' }}
       />
     )
   })
@@ -272,7 +272,7 @@ export function EnvelopeBack({ W, deco, stage = 0, letterUrl, sealSrc, children,
   const rising = stage >= 3
   const ink = (ENVELOPES[deco.envelope] || ENVELOPES.ivory).ink
   return (
-    <div className="relative" style={{ width: W, height: H, perspective: W * 3 }}>
+    <div className="relative" style={{ width: W, height: H, perspective: W * 3, transformStyle: 'preserve-3d' }}>
       {/* layered shadow: wide ambient + tight contact */}
       <div className="absolute -inset-x-4 -bottom-6 top-10 rounded-[20px]" style={{ background: 'rgba(40,25,15,0.28)', filter: `blur(${W * 0.07}px)`, transform: 'translateY(10%)' }} />
       <div className="absolute inset-x-1 -bottom-1 top-2 rounded-[8px]" style={{ background: 'rgba(40,25,15,0.35)', filter: `blur(${W * 0.012}px)` }} />

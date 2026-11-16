@@ -10,7 +10,7 @@ async function redis(cmd) {
   return (await r.json()).result
 }
 
-const slugify = (s) =>
+const _slugify = (s) =>
   String(s || '')
     .toLowerCase()
     .normalize('NFKD')
@@ -26,10 +26,11 @@ export default async function handler(req, res) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {}
       const { payload, to } = body
       if (typeof payload !== 'string' || payload.length < 10 || payload.length > 150000) return res.status(400).json({ error: 'bad letter' })
-      const base = slugify(to) || 'letter'
-      for (let i = 0; i < 6; i++) {
-        const code = Math.random().toString(36).slice(2, 6)
-        const id = `${base}-${code}`
+      // 5-character code (60M combinations): mirelle.link/l/k7q2x
+      const ABC = 'abcdefghjkmnpqrstuvwxyz23456789' // no look-alikes (0/o, 1/l/i)
+      for (let i = 0; i < 8; i++) {
+        let id = ''
+        for (let k = 0; k < 5; k++) id += ABC[Math.floor(Math.random() * ABC.length)]
         const ok = await redis(['SET', 'letter:' + id, JSON.stringify({ payload, to: String(to || '').slice(0, 30) }), 'NX', 'EX', YEAR])
         if (ok === 'OK') return res.status(200).json({ id })
       }

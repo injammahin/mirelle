@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Download, RotateCcw, PenLine, X, Volume2, VolumeX } from 'lucide-react'
 import { crack, rustle, chime, buzz, soundOn, setSound } from '../../lib/sfx'
@@ -8,6 +8,8 @@ import { renderLetterCanvas, download } from '../../lib/exporter'
 import { sealById } from '../../data/sealImages'
 import { LogoMark } from '../ui/Logo'
 import { EnvelopeBack, EnvelopeFront, Closure } from './Envelope'
+import { useTilt } from '../../lib/useTilt'
+const ARRoom = lazy(() => import('./ARRoom'))
 
 /* ---------- helpers ---------- */
 function useViewport() {
@@ -171,6 +173,8 @@ export default function LetterViewer({ preview = null, onClose }) {
   const [flipped, setFlipped] = useState(false)
   const [spin, setSpin] = useState(false)
   const run = useRef(0)
+  const [ar, setAr] = useState(false)
+  const tilt = useTilt(!ar)
 
   useEffect(() => {
     let alive = true
@@ -333,6 +337,8 @@ export default function LetterViewer({ preview = null, onClose }) {
                   transition={stage ? { duration: 0.7, ease: 'easeInOut' } : { default: { type: 'spring', stiffness: 60, damping: 11, mass: 1.1 }, rotate: { duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }, y: { duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }, opacity: { duration: 0.5 } }}
                   aria-label="Open the letter"
                 >
+                  <motion.div className="pointer-events-none absolute inset-[6%] rounded-[24px]" style={{ x: tilt.sx, y: tilt.sy, background: 'rgba(30,18,10,0.22)', filter: 'blur(26px)', zIndex: -1 }} />
+                  <motion.div className="relative" style={{ rotateX: tilt.rx, rotateY: tilt.ry, transformPerspective: 1100, transformStyle: 'preserve-3d' }}>
                   {reveal === 'unfold' ? (
                     <Folded url={img.url} w={lw} h={lh} stage={stage} sealSrc={sealSrc} deco={deco} />
                   ) : showFront ? (
@@ -347,21 +353,29 @@ export default function LetterViewer({ preview = null, onClose }) {
                   ) : (
                     <EnvelopeBack W={envW} deco={deco} stage={reveal === 'stardust' || reveal === 'petals' ? Math.min(stage, 1) : stage} letterUrl={img.url} sealSrc={sealSrc} glow={stage >= 2 && reveal !== 'stardust' && reveal !== 'petals'} />
                   )}
+                  {/* light catching the paper as it tilts */}
+                  <motion.div className="pointer-events-none absolute inset-0 rounded-[8px]" style={{ background: tilt.glare, mixBlendMode: 'soft-light', zIndex: 30, transform: 'translateZ(40px)' }} />
+                  </motion.div>
                 </motion.button>
               )}
             </AnimatePresence>
 
             {/* the letter */}
             {((reveal !== 'unfold' && stage >= 4) || (reveal === 'unfold' && stage >= 5)) && (
+              <motion.div className="absolute top-0" style={{ width: lw, height: lh, left: (boxW - lw) / 2, rotateX: tilt.rx, rotateY: tilt.ry, transformPerspective: 1300 }}>
+              <motion.div className="pointer-events-none absolute inset-[4%]" style={{ x: tilt.sx, y: tilt.sy, background: 'rgba(30,18,10,0.3)', filter: 'blur(30px)', zIndex: -1 }} />
               <motion.div
-                className="absolute top-0 overflow-hidden rounded-[3px]"
-                style={{ width: lw, height: lh, left: (boxW - lw) / 2, boxShadow: '0 40px 80px -36px rgba(30,18,10,0.65), 0 8px 20px -10px rgba(30,18,10,0.3)' }}
+                className="relative h-full w-full overflow-hidden rounded-[3px]"
+                style={{ boxShadow: '0 8px 20px -10px rgba(30,18,10,0.3)' }}
                 initial={reveal === 'unfold' ? false : reveal === 'stardust' || reveal === 'petals' ? { opacity: 0, scale: 0.9, filter: 'blur(12px) brightness(1.4)' } : { opacity: 0, y: -40, scale: 0.62, rotateX: 38, rotateZ: -4 }}
                 animate={{ opacity: 1, y: [0, -5, 0], scale: 1, rotateX: 0, rotateZ: 0, filter: 'blur(0px) brightness(1)' }}
                 transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], y: { duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.2 } }}
               >
                 <img src={img.url} alt="Your letter" className="h-full w-full" draggable={false} />
                 <div className="letter-sheen pointer-events-none absolute inset-0" />
+                <motion.div className="pointer-events-none absolute inset-0" style={{ background: tilt.glare, mixBlendMode: 'soft-light' }} />
+                <motion.div className="pointer-events-none absolute inset-y-0 w-[45%]" style={{ left: tilt.sheen, background: 'linear-gradient(100deg, transparent, rgba(255,246,222,0.22), transparent)', mixBlendMode: 'screen' }} />
+              </motion.div>
               </motion.div>
             )}
             {reveal === 'stardust' && <Stardust phase={stage === 1 ? 1 : stage === 2 ? 2 : 0} />}
@@ -373,6 +387,13 @@ export default function LetterViewer({ preview = null, onClose }) {
               <p className={`mt-1 flex items-center gap-1.5 text-[11.5px] uppercase tracking-[0.3em] ${dark ? 'text-oat/70' : 'text-taupe'}`}>
                 <span className="develop-spark">✦</span> tap to open
               </p>
+              {tilt.needsPermission ? (
+                <button onClick={tilt.enable} className={`mt-3 rounded-full px-3.5 py-1.5 text-[11.5px] font-medium backdrop-blur ${dark ? 'bg-white/10 text-oat' : 'bg-white/70 text-espresso shadow-soft'}`}>
+                  ✦ feel it move — enable motion
+                </button>
+              ) : (
+                tilt.sensor && <p className={`mt-2 font-serif text-[12.5px] italic ${dark ? 'text-oat/60' : 'text-taupe/80'}`}>tilt your phone to catch the light</p>
+              )}
             </motion.div>
           )}
 
@@ -383,6 +404,9 @@ export default function LetterViewer({ preview = null, onClose }) {
                   <Download size={15} /> Save letter
                 </button>
               )}
+              <button onClick={() => setAr(true)} className="inline-flex h-10 items-center gap-2 rounded-full bg-terracotta px-4 text-[13px] font-medium text-white shadow-glow">
+                ✦ See it in your room
+              </button>
               <button onClick={replay} className={`inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[13px] font-medium backdrop-blur ${dark ? 'border-oat/30 text-oat' : 'border-sand bg-white/70 text-espresso'}`}>
                 <RotateCcw size={15} /> Replay
               </button>
@@ -402,6 +426,11 @@ export default function LetterViewer({ preview = null, onClose }) {
       <motion.div className="pointer-events-none absolute inset-0 z-[5]" initial={false} animate={{ opacity: stage >= 4 ? 1 : 0 }} transition={{ duration: 1.2 }} style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 45%, transparent 40%, rgba(30,18,10,0.28) 100%)' }} />
       <Rise go={reveal !== 'unfold' && stage >= 2 && stage < 5} />
       <Petals go={reveal === 'petals' && stage >= 2} />
+      {ar && img && (
+        <Suspense fallback={<div className="fixed inset-0 z-[95] bg-oat" />}>
+          <ARRoom letterCanvas={img.canvas} deco={deco} sealSrc={data?.letter?.seal?.enabled !== false ? sealSrc : null} onClose={() => setAr(false)} />
+        </Suspense>
+      )}
       {!preview && <SoundToggle dark={dark} />}
     </div>
   )

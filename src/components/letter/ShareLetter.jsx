@@ -214,7 +214,7 @@ export default function ShareLetter() {
 
         {made && (
           <p className="mt-4 truncate rounded-xl border border-sand bg-white/70 px-3 py-2 text-center font-serif text-[13.5px] italic text-espresso" title={made}>
-            {made.includes('/l/') ? made.replace(/^https?:\/\//, '') : 'your letter link is ready ✦'}
+            {made.includes('/l/') ? made.replace(/^https?:\/\//, '') : 'short links turn on once the site is live on Vercel ✦'}
           </p>
         )}
         <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2">
