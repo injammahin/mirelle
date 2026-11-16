@@ -1,4 +1,4 @@
-import { Compass, Camera, Mail } from 'lucide-react'
+import { Compass, Camera, Mail, Film } from 'lucide-react'
 import { useStudio } from './store/useStudio'
 import NavRail from './components/layout/NavRail'
 import TopBar from './components/layout/TopBar'
@@ -6,6 +6,7 @@ import ExploreBoard from './components/layout/ExploreBoard'
 import { lazy, Suspense, useEffect } from 'react'
 // the editor is split out so the home gallery loads light and fast
 const StudioLayout = lazy(() => import('./components/layout/StudioLayout'))
+const BoothPage = lazy(() => import('./components/booth/BoothPage'))
 import Toast from './components/ui/Toast'
 import SaveSheet from './components/ui/SaveSheet'
 
@@ -15,6 +16,7 @@ function ExploreDock() {
   const items = [
     { id: 'explore', label: 'Explore', icon: Compass },
     { id: 'photo', label: 'Studio', icon: Camera },
+    { id: 'booth', label: 'Booth', icon: Film },
     { id: 'letter', label: 'Letters', icon: Mail },
   ]
   return (
@@ -54,9 +56,13 @@ export default function App() {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         {/* page swap: fade in only. CSS only: the page is always visible even if the animation never runs. */}
-        <div key={mode === 'explore' ? 'explore' : 'studio'} className="page-fade flex min-h-0 min-w-0 flex-1 flex-col">
+        <div key={mode === 'explore' || mode === 'booth' ? mode : 'studio'} className="page-fade flex min-h-0 min-w-0 flex-1 flex-col">
             {mode === 'explore' ? (
               <ExploreBoard />
+            ) : mode === 'booth' ? (
+              <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-taupe">Opening booth…</div>}>
+                <BoothPage />
+              </Suspense>
             ) : (
               <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-taupe">Opening studio…</div>}>
                 <StudioLayout />
@@ -64,7 +70,7 @@ export default function App() {
             )}
         </div>
       </div>
-      {mode === 'explore' && <ExploreDock />}
+      {(mode === 'explore' || mode === 'booth') && <ExploreDock />}
       <Toast />
       <SaveSheet />
       <div className="grain-overlay" />

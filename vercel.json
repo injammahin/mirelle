@@ -1,4 +1,5 @@
 {
+  "rewrites": [{ "source": "/l/:id", "destination": "/api/open?id=:id" }],
   "headers": [
     {
       "source": "/assets/(.*)",

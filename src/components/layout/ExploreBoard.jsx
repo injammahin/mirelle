@@ -236,6 +236,18 @@ export default function ExploreBoard() {
         </section>
 
         <TryYourPhoto photo={photo} />
+        <button onClick={() => setMode('booth')} className="group mb-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-[#1c1917] p-2.5 pr-4 text-left shadow-[0_10px_30px_-18px_rgba(20,10,5,0.8)]">
+          <span className="relative flex h-12 w-9 shrink-0 flex-col gap-[3px] rounded-[4px] bg-[#fbf8f2] p-[3px] shadow-soft transition group-hover:-rotate-6">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="flex-1 rounded-[1px] bg-gradient-to-br from-[#d9b99b] to-[#7a8fa6]" />
+            ))}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-serif text-[15px] italic leading-tight text-[#f3e9dc]">photo booth</span>
+            <span className="block text-[11px] text-white/55">4 shots, 3·2·1, a strip to keep</span>
+          </span>
+          <span className="shrink-0 rounded-full bg-[#f3e9dc] px-3.5 py-1.5 text-[12px] font-semibold text-[#1c1917]">Open</span>
+        </button>
 
         {/* search + categories */}
         <div className="sticky top-0 z-20 -mx-3 mb-5 bg-oat/85 px-3 py-3 backdrop-blur-md sm:-mx-5 sm:px-5 md:-mx-8 md:px-8">

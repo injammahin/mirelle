@@ -149,3 +149,25 @@ export async function renderPinImage(pin, width, letterState) {
 }
 
 export { download }
+
+/** Deliver any finished canvas: Save to Photos sheet on phones, download elsewhere. */
+export async function deliverCanvas(canvas, name, setReadyExport, format = 'png') {
+  const mime = format === 'jpg' ? 'image/jpeg' : 'image/png'
+  const blob = await new Promise((res) => canvas.toBlob(res, mime, 0.95))
+  if (!blob) throw new Error('Export failed')
+  const out = { blob, name, w: canvas.width, h: canvas.height }
+  if (canSaveToPhotos() && setReadyExport) {
+    setReadyExport(out)
+    return { ...out, pending: true }
+  }
+  download(blob, name)
+  return out
+}
+
+/** Story (1080×1920) version of the current photo or letter. */
+export async function exportStory(state, kind) {
+  const { makeStory } = await import('./story')
+  const c = kind === 'letter' ? await renderLetterCanvas(state, 1600) : await renderPhotoCanvas(state, 1600)
+  const story = makeStory(c, { radius: kind === 'letter' ? 0.006 : 0.014 })
+  return deliverCanvas(story, `mirelle-story-${new Date().toISOString().slice(0, 10)}.jpg`, state.setReadyExport, 'jpg')
+}

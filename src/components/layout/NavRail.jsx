@@ -1,4 +1,4 @@
-import { Compass, Camera, Mail, Download, Loader2 } from 'lucide-react'
+import { Film, Compass, Camera, Mail, Download, Loader2 } from 'lucide-react'
 import { useStudio } from '../../store/useStudio'
 import { LogoMark } from '../ui/Logo'
 import { useDownloadPng } from './DownloadButton'
@@ -6,6 +6,7 @@ import { useDownloadPng } from './DownloadButton'
 export const NAV = [
   { id: 'explore', label: 'Explore', icon: Compass },
   { id: 'photo', label: 'Photo Studio', icon: Camera },
+  { id: 'booth', label: 'Photo Booth', icon: Film },
   { id: 'letter', label: 'Letters', icon: Mail },
 ]
 

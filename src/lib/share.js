@@ -82,16 +82,42 @@ export const cleanLetter = (letter) => {
   return l
 }
 
-/** { letter, aspect, share } -> shareable URL */
+const linkCache = new Map() // payload -> short url (same letter = same link)
+
+/** { letter, aspect, share } -> shareable URL. Short (/l/ayesha-k7q2) when the server can store it. */
 export async function makeLetterLink({ letter, aspect, share }) {
-  const json = new TextEncoder().encode(JSON.stringify({ v: 2, l: cleanLetter(letter), a: aspect, s: { ...DEFAULT_SHARE, ...share } }))
+  const s = { ...DEFAULT_SHARE, ...share }
+  const json = new TextEncoder().encode(JSON.stringify({ v: 2, l: cleanLetter(letter), a: aspect, s }))
   let payload
   if (typeof CompressionStream !== 'undefined') payload = 'z' + b64url(await pipe(json, new CompressionStream('deflate-raw')))
   else payload = 'j' + b64url(json)
-  return `${location.origin}${location.pathname}#l=${payload}`
+  if (linkCache.has(payload)) return linkCache.get(payload)
+  try {
+    const ctl = new AbortController()
+    const t = setTimeout(() => ctl.abort(), 6000)
+    const r = await fetch('/api/letter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payload, to: s.to }), signal: ctl.signal })
+    clearTimeout(t)
+    if (r.ok) {
+      const { id } = await r.json()
+      const url = `${location.origin}/l/${id}`
+      linkCache.set(payload, url)
+      return url
+    }
+  } catch {
+    /* no server storage: fall back to a self-contained link */
+  }
+  return `${location.origin}/#l=${payload}`
 }
 
+const SHORT = /^\/l\/([a-z0-9-]{3,40})\/?$/i
+
 export async function readLetterLink(hash = location.hash) {
+  const sm = SHORT.exec(location.pathname)
+  if (sm) {
+    const r = await fetch(`/api/letter?id=${sm[1]}`)
+    if (!r.ok) return null
+    hash = '#l=' + (await r.json()).payload
+  }
   const m = /^#l=([zj])([A-Za-z0-9_-]+)$/.exec(hash)
   if (!m) return null
   let bytes = unb64url(m[2])
@@ -102,4 +128,4 @@ export async function readLetterLink(hash = location.hash) {
   return { letter: d.l, aspect: d.a || '4:5', share: { ...DEFAULT_SHARE, ...share, envelope: ENVELOPES[share.envelope] ? share.envelope : 'ivory' } }
 }
 
-export const isLetterLink = () => /^#l=/.test(location.hash)
+export const isLetterLink = () => /^#l=/.test(location.hash) || SHORT.test(location.pathname)

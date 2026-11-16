@@ -183,7 +183,7 @@ export default function LetterViewer({ preview = null, onClose }) {
         const c = await renderLetterCanvas({ aspect: d.aspect, letter: { ...d.letter, photoPin: { enabled: false } } }, 1200)
         if (alive) setImg({ url: c.toDataURL('image/jpeg', 0.9), w: c.width, h: c.height, canvas: c })
       } catch {
-        if (alive) setError('This letter link looks incomplete. Ask the sender to copy it again.')
+        if (alive) setError('This letter couldn’t be found. Ask the sender to share it again 💌')
       }
     })()
     return () => {
@@ -275,7 +275,7 @@ export default function LetterViewer({ preview = null, onClose }) {
     } catch {
       /* ignore */
     }
-    location.href = location.pathname
+    location.href = '/'
   }
 
   const showFront = reveal === 'flip' && !flipped
@@ -294,7 +294,7 @@ export default function LetterViewer({ preview = null, onClose }) {
           </button>
         </>
       ) : (
-        <a href={location.pathname} className="absolute left-4 top-4 z-40 flex items-center gap-2 opacity-80 transition hover:opacity-100">
+        <a href="/" className="absolute left-4 top-4 z-40 flex items-center gap-2 opacity-80 transition hover:opacity-100">
           <LogoMark size={30} />
           <span className={`font-serif text-[15px] italic ${txt}`}>Mirelle</span>
         </a>

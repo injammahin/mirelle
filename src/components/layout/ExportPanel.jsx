@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Download, Loader2 } from 'lucide-react'
+import { Download, Loader2, Smartphone } from 'lucide-react'
 import { useStudio } from '../../store/useStudio'
 import { ASPECTS } from '../../data/filters'
-import { EXPORT_SIZES, dims, exportArtwork } from '../../lib/exporter'
+import { EXPORT_SIZES, dims, exportArtwork, exportStory } from '../../lib/exporter'
 import Segmented from '../ui/Segmented'
 import Section from '../ui/Section'
 import ShareLetter from '../letter/ShareLetter'
@@ -55,6 +55,23 @@ export default function ExportPanel({ kind }) {
       <button className="btn-primary h-12 w-full text-[15px]" onClick={run} disabled={busy}>
         {busy ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
         {busy ? 'Rendering high-res…' : `Download ${kind === 'letter' ? 'letter' : 'artwork'}`}
+      </button>
+      <button
+        className="btn-ghost h-12 w-full text-[14.5px]"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true)
+          try {
+            const out = await exportStory(useStudio.getState(), kind)
+            if (!out.pending) showToast('Story saved ✨ ready for Instagram & TikTok')
+          } catch (e) {
+            showToast(e.message || 'Export failed')
+          } finally {
+            setBusy(false)
+          }
+        }}
+      >
+        <Smartphone size={17} /> Save as Story · 9:16
       </button>
     </div>
   )

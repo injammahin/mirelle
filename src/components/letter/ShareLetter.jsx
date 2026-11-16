@@ -7,6 +7,7 @@ import { REVEALS, ENVELOPES, FLAPS, CLOSURES, RIBBONS, SPRIGS, LINERS, DEFAULT_S
 import { EnvelopeBack, EnvelopeFront } from './Envelope'
 import LetterViewer from './LetterViewer'
 import Section from '../ui/Section'
+import GestureStickers from '../ui/GestureStickers'
 
 const ICON = { envelope: Mail, flip: RefreshCcw, stardust: Sparkles, petals: Flower2, unfold: ScrollText }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
@@ -34,52 +35,11 @@ function DecorPreview({ deco, set, side }) {
   const up = () => (drag.current = null)
   const cur = sel != null ? list[sel] : null
   return (
-    <div className="relative mx-auto select-none" style={{ width: W, height: H + 26 }} onPointerDown={() => setSel(null)}>
+    <div className="relative mx-auto select-none" style={{ width: W, height: H + 16 }}>
       <div className="pointer-events-none absolute left-0 top-2">{side === 'front' ? <EnvelopeFront W={W} deco={{ ...deco, stickers: [] }} sealSrc={sealSrc} /> : <EnvelopeBack W={W} deco={{ ...deco, stickers: [] }} sealSrc={sealSrc} />}</div>
-      {/* draggable stickers on top */}
       <div className="absolute left-0 top-2" style={{ width: W, height: H }}>
-        {list.map((st, i) => {
-          const d = STICKERS.find((x) => x.id === st.id)
-          if (!d) return null
-          return (
-            <img
-              key={i}
-              src={d.preview || d.src}
-              alt=""
-              draggable={false}
-              onPointerDown={(e) => down(e, i)}
-              onPointerMove={move}
-              onPointerUp={up}
-              onPointerCancel={up}
-              className={`absolute max-w-none cursor-move touch-none ${sel === i ? 'outline-dashed outline-[1.5px] outline-offset-2 outline-terracotta' : ''}`}
-              style={{ left: `${st.x * 100}%`, top: `${st.y * 100}%`, width: st.w * W, transform: `translate(-50%,-50%) rotate(${st.r || 0}deg)`, zIndex: 8, filter: 'drop-shadow(0 2px 3px rgba(40,30,20,.22))' }}
-            />
-          )
-        })}
+        <GestureStickers list={list} setList={(fn) => set({ stickers: typeof fn === 'function' ? fn(list) : fn })} sel={sel} setSel={setSel} visible max={0.6} />
       </div>
-      {cur && (
-        <div onPointerDown={(e) => e.stopPropagation()} className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-white p-0.5 shadow-soft">
-          <button onClick={() => update(sel, { w: clamp(cur.w - 0.03, 0.06, 0.6) })} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-linen" aria-label="Smaller">
-            <Minus size={13} />
-          </button>
-          <button onClick={() => update(sel, { r: ((cur.r || 0) + 15) % 360 })} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-linen" aria-label="Rotate">
-            <RefreshCcw size={13} />
-          </button>
-          <button onClick={() => update(sel, { w: clamp(cur.w + 0.03, 0.06, 0.6) })} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-linen" aria-label="Bigger">
-            <Plus size={13} />
-          </button>
-          <button
-            onClick={() => {
-              set({ stickers: list.filter((_, k) => k !== sel) })
-              setSel(null)
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-espresso hover:text-red-600"
-            aria-label="Remove sticker"
-          >
-            <Trash2 size={13} />
-          </button>
-        </div>
-      )}
     </div>
   )
 }
@@ -109,7 +69,12 @@ export default function ShareLetter() {
     const st = useStudio.getState()
     setPreview({ letter: st.letter, aspect: st.aspect, share: { ...share, ...(reveal ? { reveal } : {}) } })
   }
-  const link = () => makeLetterLink({ letter, aspect, share })
+  const [made, setMade] = useState('')
+  const link = async () => {
+    const u = await makeLetterLink({ letter, aspect, share })
+    setMade(u)
+    return u
+  }
   const copy = async () => {
     const url = await link()
     try {
@@ -235,7 +200,7 @@ export default function ShareLetter() {
             </button>
           ))}
         </div>
-        <p className="mt-1 text-[10.5px] text-taupe">Tap to add · drag on the envelope to place · tap one to resize, rotate or remove.</p>
+        <p className="mt-1 text-[10.5px] text-taupe">Tap to add · drag with one finger · pinch & twist with two · × to remove.</p>
 
         <label className="mt-4 block">
           <span className="mb-1 block text-[12px] font-semibold text-espresso">For</span>
@@ -247,6 +212,11 @@ export default function ShareLetter() {
         </label>
         {letter.photoPin?.enabled && <p className="mt-2 text-[11px] text-taupe">Pinned photos stay on your device and aren't included in links.</p>}
 
+        {made && (
+          <p className="mt-4 truncate rounded-xl border border-sand bg-white/70 px-3 py-2 text-center font-serif text-[13.5px] italic text-espresso" title={made}>
+            {made.includes('/l/') ? made.replace(/^https?:\/\//, '') : 'your letter link is ready ✦'}
+          </p>
+        )}
         <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2">
           <button onClick={send} className="btn-primary h-11 text-[13.5px]">
             <Send size={16} /> Send
