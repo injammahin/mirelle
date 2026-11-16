@@ -1,0 +1,92 @@
+[
+ {
+  "id": "rose",
+  "name": "Rose",
+  "w": 665,
+  "h": 700
+ },
+ {
+  "id": "pink-bow",
+  "name": "Pink Bow",
+  "w": 571,
+  "h": 539
+ },
+ {
+  "id": "love-letter",
+  "name": "Love Letter",
+  "w": 672,
+  "h": 700
+ },
+ {
+  "id": "heart",
+  "name": "Heart",
+  "w": 619,
+  "h": 629
+ },
+ {
+  "id": "classic-red",
+  "name": "Classic Red",
+  "w": 694,
+  "h": 700
+ },
+ {
+  "id": "gold-script",
+  "name": "Gold Script",
+  "w": 625,
+  "h": 636
+ },
+ {
+  "id": "lavender-oval",
+  "name": "Lavender Oval",
+  "w": 545,
+  "h": 700
+ },
+ {
+  "id": "sage-leaf",
+  "name": "Sage Leaf",
+  "w": 700,
+  "h": 697
+ },
+ {
+  "id": "gold-bloom",
+  "name": "Gold Bloom",
+  "w": 672,
+  "h": 700
+ },
+ {
+  "id": "gold-sun",
+  "name": "Gold Sun",
+  "w": 409,
+  "h": 406
+ },
+ {
+  "id": "navy-botanical",
+  "name": "Navy Botanical",
+  "w": 342,
+  "h": 343
+ },
+ {
+  "id": "lilac-lavender",
+  "name": "Lilac Lavender",
+  "w": 580,
+  "h": 700
+ },
+ {
+  "id": "butterfly",
+  "name": "Butterfly",
+  "w": 619,
+  "h": 620
+ },
+ {
+  "id": "ivory-wildflower",
+  "name": "Ivory Wildflower",
+  "w": 550,
+  "h": 555
+ },
+ {
+  "id": "gold-monogram-m",
+  "name": "Gold Monogram M",
+  "w": 700,
+  "h": 698
+ }
+]

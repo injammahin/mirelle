@@ -53,6 +53,18 @@ export default function PhotosPanel() {
 
   return (
     <div className="space-y-6">
+      {photo.src && (
+        <div className="flex items-center gap-3 rounded-2xl border border-sand bg-white/70 p-2.5">
+          <img src={photo.src} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-espresso">{photo.name || 'Your photo'}</p>
+            <p className="text-[11px] text-taupe">In your design</p>
+          </div>
+          <button onClick={() => useStudio.getState().removeSlotPhoto(0)} className="shrink-0 rounded-full border border-sand px-3 py-1.5 text-[12px] font-semibold text-espresso transition hover:border-red-300 hover:text-red-600">
+            Remove
+          </button>
+        </div>
+      )}
       <div
         onDragOver={(e) => {
           e.preventDefault()

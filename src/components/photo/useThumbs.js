@@ -5,12 +5,13 @@ import { FILTERS } from '../../data/filters'
 import { FRAMES } from '../../data/frames'
 import { getTemplate } from '../../lib/templateFrames'
 import { useStudio } from '../../store/useStudio'
+import { EXAMPLES } from '../../data/examples'
 
 /** Real previews of the user's own photo with each filter preset. */
 export function useFilterThumbs() {
   const photo = useStudio((s) => s.photo)
   const crop = useStudio((s) => s.crop)
-  const img = useImage(photo.src)
+  const img = useImage(photo.src || EXAMPLES[0]?.src)
   const [thumbs, setThumbs] = useState({})
   useEffect(() => {
     if (!img) return
@@ -33,7 +34,7 @@ export function useFrameThumbs(frames = FRAMES) {
   const adj = useStudio((s) => s.adj)
   const captions = useStudio((s) => s.captions)
   const aspect = useStudio((s) => s.aspect)
-  const img = useImage(photo.src)
+  const img = useImage(photo.src || EXAMPLES[0]?.src)
   const av = useAssetsVersion()
   const fv = useFontsVersion()
   const [thumbs, setThumbs] = useState({})

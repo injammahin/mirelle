@@ -11,6 +11,8 @@ import { PROMPTS } from '../../data/letter'
 import { useStudio } from '../../store/useStudio'
 import { createLetterRecipe, createRecipe, pickAutoFrame, autoStickerIds, createAutoRecipe } from '../../lib/magic'
 import { pick, uid } from '../../lib/random'
+import { IMAGE_PAPERS } from '../../data/letterPapers'
+import { SEALS } from '../../data/sealImages'
 
 function Burst({ bursts }) {
   return (
@@ -54,7 +56,8 @@ export default function MagicBar() {
     setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 1600)
     if (mode === 'letter') {
       const r = createLetterRecipe(vibe)
-      st.setLetter({ ...r, seal: { ...st.letter.seal, ...r.seal } })
+      // real stationery + keep the user's own stickers
+      st.setLetter({ ...r, paper: pick(IMAGE_PAPERS).id, botanicals: [], postmark: false, seal: { ...st.letter.seal, ...r.seal, style: pick(SEALS).id } })
       useStudio.setState((s) => ({ magicTick: s.magicTick + 1 }))
       st.showToast(`Stationery styled · ${VIBES.find((v) => v.id === vibe).name}`)
     } else {

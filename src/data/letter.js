@@ -126,7 +126,7 @@ export const TEMPLATES = [
 ]
 
 export const DEFAULT_LETTER = {
-  paper: 'parchment',
+  paper: 'img:pressed-violet',
   font: 'caveat',
   ink: 'sepia',
   size: 0.046,
@@ -136,10 +136,11 @@ export const DEFAULT_LETTER = {
   body: TEMPLATES[0].body,
   closing: TEMPLATES[0].closing,
   signature: 'M.',
-  postmark: true,
+  postmark: false,
   stampPhrase: STAMP_PHRASES[0],
-  seal: { enabled: true, style: 'rose', color: 'burgundy', monogram: 'A', position: 'bottom-right' },
-  botanicals: ['lavender', 'daisy'],
+  seal: { enabled: true, style: 'rose', size: 1, position: 'bottom-right' },
+  botanicals: [],
+  layers: [], // real stickers on the letter
   washi: 'sage',
   photoPin: { enabled: false, clip: 'paperclip', corner: 'top-right' },
   seed: 7,

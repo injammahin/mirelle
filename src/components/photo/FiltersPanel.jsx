@@ -17,16 +17,16 @@ export default function FiltersPanel() {
     <div className="space-y-4">
       {/* phones: one swipeable row · larger screens: grid */}
       <div className="no-scrollbar -mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:gap-3 md:overflow-visible md:px-0">
-        {FILTERS.map((f) => (
+        {FILTERS.filter((f) => !f.hidden).map((f) => (
           <button key={f.id} onClick={() => applyFilter(f.id)} className={`tile w-[104px] shrink-0 snap-start p-1.5 text-left md:w-auto ${filterId === f.id ? 'tile-active' : ''}`}>
-            <div className="aspect-[4/5] overflow-hidden rounded-lg bg-linen">{thumbs[f.id] && <img src={thumbs[f.id]} alt={f.name} className="h-full w-full object-cover" />}</div>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-linen">{f.sig && <span className="absolute left-1 top-1 z-10 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-terracotta shadow-soft">✦ NEW</span>}{thumbs[f.id] && <img src={thumbs[f.id]} alt={f.name} className="h-full w-full object-cover" />}</div>
             <div className="truncate px-1 pt-1.5 text-[11.5px] font-semibold text-espresso md:text-[12px]">{f.name}</div>
             <div className="hidden truncate px-1 pb-0.5 text-[10.5px] text-taupe md:block">{f.mood}</div>
           </button>
         ))}
       </div>
       {isLook && (
-        <Slider label="Intensity" min={0} max={100} step={1} value={strength ?? 85} format={(v) => `${v}%`} onChange={(v) => setAdj('lookStrength', v)} />
+        <Slider label="Intensity" min={0} max={100} step={1} value={strength ?? 100} format={(v) => `${v}%`} onChange={(v) => setAdj('lookStrength', v)} />
       )}
       <div>
         <p className="mb-2 text-[12px] font-semibold text-espresso">Magic outline</p>

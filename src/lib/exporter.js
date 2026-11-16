@@ -8,6 +8,8 @@ import { makeCanvas, renderPhotoScene } from './photoRenderer'
 import { FRAME_MAP } from '../data/frames'
 import { loadTemplate } from './templateFrames'
 import { prepareSticker } from './imageStickers'
+import { IMAGE_PAPER_MAP } from '../data/letterPapers'
+import { sealById } from '../data/sealImages'
 import { renderLetter, letterAssetList } from './letterRenderer'
 
 export const EXPORT_SIZES = [
@@ -23,6 +25,7 @@ export const dims = (aspect, width) => {
 
 export async function preparePhoto(state) {
   await loadAllFonts()
+  if (!state.photo?.src) throw new Error('Add a photo first ✨')
   const img = await loadImage(state.photo.src, state.photo.src)
   const ids = new Set(state.layers.filter((l) => l.type === 'sticker').map((l) => l.stickerId))
   if (state.frameId === 'lace') ids.add('bow')
@@ -46,6 +49,13 @@ export async function renderPhotoCanvas(state, width, { cache = false } = {}) {
 export async function renderLetterCanvas(state, width) {
   await loadAllFonts()
   await Promise.all(letterAssetList(state.letter).map(([k, svg]) => loadSvgImage(k, svg).catch(() => {})))
+  if (state.letter.seal?.enabled) {
+    const sd = sealById(state.letter.seal.style)
+    await loadImage(sd.src, sd.src).catch(() => {})
+  }
+  const ip = IMAGE_PAPER_MAP[state.letter.paper]
+  if (ip) await loadImage(ip.src, ip.src).catch(() => {})
+  await Promise.all((state.letter.layers || []).map((l) => STICKER_MAP[l.stickerId]).filter(Boolean).map((d) => (d.kind === 'image' ? prepareSticker(d) : loadSvgImage('st:' + d.id, d.svg)).catch(() => {})))
   let photoCanvas = null
   if (state.letter.photoPin?.enabled) photoCanvas = await renderPhotoCanvas({ ...state, aspect: '4:5' }, 800)
   const [W, H] = dims(state.aspect, width)

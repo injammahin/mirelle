@@ -6,6 +6,7 @@ import { fontString } from '../data/fonts'
 import { mulberry32 } from './random'
 import LOOKS from '../data/looks.json'
 import { drawDoodle } from './doodle'
+import { applyGrade } from './grade'
 import { FRAME_MAP } from '../data/frames'
 import { getStickerCanvas } from './imageStickers'
 import { templateLayout, drawTemplateBack, drawTemplateFront } from './templateFrames'
@@ -198,6 +199,9 @@ export function renderFilteredPhoto(img, adj, crop, w, h, { cache = true } = {})
   // ---- reference "look": match this photo's colour/tone distribution to the reference photo ----
   if (adj.look && LOOKS[adj.look]) applyLook(ctx, w, h, LOOKS[adj.look], (adj.lookStrength ?? 85) / 100, adj.lookCast ?? 90)
 
+  // ---- premium grade (curves + split-tone + skin-safe vibrance) ----
+  if (adj.grade) applyGrade(ctx, w, h, adj.grade, Math.min(1.2, (adj.lookStrength ?? 100) / 100))
+
   // ---- per-pixel colour grading ----
   const B = (adj.brightness || 0) / 100
   const C = (adj.contrast || 0) * 1.28
@@ -293,7 +297,7 @@ export function renderFilteredPhoto(img, adj, crop, w, h, { cache = true } = {})
   }
   // ---- light effects (the "aesthetic" part of the looks): soft focus, sun haze, bloom ----
   // Intensity slider scales them together with the colour look.
-  const fx = adj.look ? Math.min(1.3, (adj.lookStrength ?? 85) / 85) : 1
+  const fx = adj.grade ? Math.min(1.2, (adj.lookStrength ?? 100) / 100) : adj.look ? Math.min(1.3, (adj.lookStrength ?? 85) / 85) : 1
   const hz = adj.hazeColor || [255, 214, 170]
   const rgbA = (a) => `rgba(${hz[0]},${hz[1]},${hz[2]},${Math.max(0, Math.min(1, a))})`
   const blurred = (div) => {
@@ -354,6 +358,102 @@ export function renderFilteredPhoto(img, adj, crop, w, h, { cache = true } = {})
     ctx.drawImage(s, 0, 0, w, h)
     ctx.globalAlpha = Math.min(1, (adj.glow / 100) * 1.1 * fx)
     ctx.drawImage(wide, 0, 0, w, h)
+    ctx.restore()
+  }
+  // ---- signature effects ----
+  // halation: red-orange glow bleeding from highlights (CineStill 800T)
+  if (adj.halation > 0) {
+    const s = blurred(10)
+    const sc = s.getContext('2d', { willReadFrequently: true })
+    const gd = sc.getImageData(0, 0, s.width, s.height)
+    const p = gd.data
+    for (let i = 0; i < p.length; i += 4) {
+      const L = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]
+      const k = Math.max(0, (L - 135) / 120) ** 1.1
+      p[i] = 255 * k
+      p[i + 1] = 70 * k
+      p[i + 2] = 35 * k
+    }
+    sc.putImageData(gd, 0, 0)
+    ctx.save()
+    ctx.globalCompositeOperation = 'screen'
+    ctx.imageSmoothingQuality = 'high'
+    ctx.globalAlpha = Math.min(1, (adj.halation / 100) * fx)
+    ctx.drawImage(s, 0, 0, w, h)
+    ctx.drawImage(s, -w * 0.015, -h * 0.015, w * 1.03, h * 1.03)
+    ctx.restore()
+  }
+  // pearl: soft iridescent sheen
+  if (adj.pearl > 0) {
+    const g = ctx.createLinearGradient(0, 0, w, h)
+    g.addColorStop(0, '#ffc7dd')
+    g.addColorStop(0.35, '#d9c8ff')
+    g.addColorStop(0.65, '#c4f1e6')
+    g.addColorStop(1, '#ffe2c2')
+    ctx.save()
+    ctx.globalCompositeOperation = 'soft-light'
+    ctx.globalAlpha = Math.min(1, (adj.pearl / 100) * 1.25 * fx)
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, w, h)
+    ctx.restore()
+  }
+  // prism: colour fringing that grows toward the edges (vintage lens)
+  if (adj.prism > 0) {
+    const id = ctx.getImageData(0, 0, w, h)
+    const src = new Uint8ClampedArray(id.data)
+    const d2 = id.data
+    const k = Math.max(1, Math.round(w * 0.013 * (adj.prism / 100) * fx))
+    const cx = w / 2
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const e = Math.min(1, Math.abs(x - cx) / cx) ** 1.5
+        const o = Math.round(k * e)
+        if (!o) continue
+        const i = (y * w + x) * 4
+        const xr = Math.min(w - 1, x + o), xb = Math.max(0, x - o)
+        d2[i] = src[(y * w + xr) * 4]
+        d2[i + 2] = src[(y * w + xb) * 4 + 2]
+      }
+    ctx.putImageData(id, 0, 0)
+  }
+  // glitter: tiny sparkles that catch on the brightest areas
+  if (adj.glitter > 0) {
+    const sw = Math.max(8, Math.round(w / 6)), sh = Math.max(8, Math.round(h / 6))
+    const sm = makeCanvas(sw, sh)
+    const smc = sm.getContext('2d', { willReadFrequently: true })
+    smc.drawImage(c, 0, 0, sw, sh)
+    const sd = smc.getImageData(0, 0, sw, sh).data
+    const rng = mulberry32(77)
+    const S = Math.min(w, h)
+    const n = Math.round(((w * h) / 260) * (adj.glitter / 100) * fx)
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    for (let t = 0; t < n * 4 && t < 60000; t++) {
+      const x = rng() * w, y = rng() * h
+      const j = (Math.floor(y / 6) * sw + Math.floor(x / 6)) * 4
+      const L = 0.299 * sd[j] + 0.587 * sd[j + 1] + 0.114 * sd[j + 2]
+      if (L < 130 || rng() > (L - 130) / 125) continue
+      // keep sparkle off skin: warm, mid-saturated pixels are skipped
+      const R0 = sd[j], G0 = sd[j + 1], B0 = sd[j + 2], mx = Math.max(R0, G0, B0)
+      if (R0 > G0 && G0 > B0 && mx && (mx - Math.min(R0, G0, B0)) / mx > 0.14 && (mx - Math.min(R0, G0, B0)) / mx < 0.6) continue
+      const a = 0.35 + rng() * 0.55
+      const r = S * (0.0016 + rng() * 0.0026)
+      ctx.fillStyle = `rgba(255,${235 + Math.round(rng() * 20)},${215 + Math.round(rng() * 40)},${a})`
+      ctx.beginPath()
+      ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.fill()
+      if (rng() < 0.08) {
+        const R = S * (0.011 + rng() * 0.016)
+        ctx.fillStyle = `rgba(255,250,240,${a})`
+        ctx.beginPath()
+        ctx.moveTo(x, y - R)
+        ctx.quadraticCurveTo(x + R * 0.1, y - R * 0.1, x + R, y)
+        ctx.quadraticCurveTo(x + R * 0.1, y + R * 0.1, x, y + R)
+        ctx.quadraticCurveTo(x - R * 0.1, y + R * 0.1, x - R, y)
+        ctx.quadraticCurveTo(x - R * 0.1, y - R * 0.1, x, y - R)
+        ctx.fill()
+      }
+    }
     ctx.restore()
   }
   // ---- film grain ----
@@ -994,7 +1094,8 @@ export function renderPhotoScene(ctx, W, H, s, { skipLayers = false, cache = tru
   if (fr?.kind === 'template') drawTemplateBack(ctx, fr, W, H, L)
   else drawFrameBack(ctx, s.frameId, W, H, L)
   // frames can grade the photo to sit in their palette
-  const adj = fr?.meta?.grade ? gradeAdj(s.adj || {}, fr.meta.grade) : s.adj
+  // photos stay exactly as uploaded; colour only changes when the user picks a filter
+  const adj = s.adj
   ;(L.slots || [L]).forEach((S, i) => {
     // each slot may carry its own photo + position (multi-photo frames)
     const image = (i > 0 && s.slotImages?.[i]) || s.image
@@ -1008,10 +1109,16 @@ export function renderPhotoScene(ctx, W, H, s, { skipLayers = false, cache = tru
       if (s.doodle?.style && s.doodle.style !== 'none') drawDoodle(ctx, fp, S, s.doodle)
     } else {
       const g = ctx.createLinearGradient(S.x, S.y, S.x + S.w, S.y + S.h)
-      g.addColorStop(0, '#efe6d8')
-      g.addColorStop(1, '#e2d5c1')
+      g.addColorStop(0, '#f4eee5')
+      g.addColorStop(1, '#e8ddcd')
       ctx.fillStyle = g
       ctx.fillRect(S.x, S.y, S.w, S.h)
+      const m = Math.min(S.w, S.h) * 0.06
+      ctx.setLineDash([Math.max(3, m * 0.35), Math.max(3, m * 0.3)])
+      ctx.strokeStyle = 'rgba(120,95,80,0.35)'
+      ctx.lineWidth = Math.max(1, Math.min(S.w, S.h) * 0.006)
+      ctx.strokeRect(S.x + m, S.y + m, S.w - 2 * m, S.h - 2 * m)
+      ctx.setLineDash([])
     }
     ctx.restore()
   })

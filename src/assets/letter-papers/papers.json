@@ -1,0 +1,512 @@
+[
+ {
+  "id": "img:pressed-violet",
+  "slug": "pressed-violet",
+  "name": "Pressed Violet",
+  "note": "Vintage script & violets",
+  "area": [
+   0.11,
+   0.1,
+   0.76,
+   0.76
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1041
+ },
+ {
+  "id": "img:golden-sun",
+  "slug": "golden-sun",
+  "name": "Golden Sun",
+  "note": "Gilded sun & newsprint",
+  "area": [
+   0.12,
+   0.21,
+   0.74,
+   0.64
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1308
+ },
+ {
+  "id": "img:starry-swirl",
+  "slug": "starry-swirl",
+  "name": "Starry Swirl",
+  "note": "Van Gogh night border",
+  "area": [
+   0.31,
+   0.27,
+   0.62,
+   0.38
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:sunflower-night",
+  "slug": "sunflower-night",
+  "name": "Sunflower Night",
+  "note": "Starry sky & sunflowers",
+  "area": [
+   0.19,
+   0.25,
+   0.61,
+   0.45
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1029
+ },
+ {
+  "id": "img:sunny-gingham",
+  "slug": "sunny-gingham",
+  "name": "Sunny Gingham",
+  "note": "Yellow check & sunflowers",
+  "area": [
+   0.1,
+   0.24,
+   0.78,
+   0.52
+  ],
+  "panel": true,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:starry-collage",
+  "slug": "starry-collage",
+  "name": "Starry Collage",
+  "note": "Torn paper & wildflowers",
+  "area": [
+   0.08,
+   0.13,
+   0.84,
+   0.43
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:blossom-scroll",
+  "slug": "blossom-scroll",
+  "name": "Blossom Scroll",
+  "note": "Rolled scroll & butterflies",
+  "area": [
+   0.23,
+   0.31,
+   0.56,
+   0.48
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:swan-garden",
+  "slug": "swan-garden",
+  "name": "Swan Garden",
+  "note": "Rococo frame & swans",
+  "area": [
+   0.15,
+   0.15,
+   0.7,
+   0.58
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:pink-bow-scroll",
+  "slug": "pink-bow-scroll",
+  "name": "Pink Bow Scroll",
+  "note": "Watercolour blush scroll",
+  "area": [
+   0.16,
+   0.24,
+   0.7,
+   0.62
+  ],
+  "panel": false,
+  "w": 1071,
+  "h": 1475
+ },
+ {
+  "id": "img:starry-lines",
+  "slug": "starry-lines",
+  "name": "Starry Lines",
+  "note": "Swirling night sky",
+  "area": [
+   0.12,
+   0.15,
+   0.76,
+   0.58
+  ],
+  "panel": false,
+  "w": 735,
+  "h": 919
+ },
+ {
+  "id": "img:burgundy-deckle",
+  "slug": "burgundy-deckle",
+  "name": "Burgundy Deckle",
+  "note": "Torn cotton & red bow",
+  "area": [
+   0.12,
+   0.17,
+   0.76,
+   0.72
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:lace-envelope",
+  "slug": "lace-envelope",
+  "name": "Lace Envelope",
+  "note": "Heirloom lace & sparkle",
+  "area": [
+   0.2,
+   0.27,
+   0.6,
+   0.4
+  ],
+  "panel": false,
+  "w": 768,
+  "h": 1367
+ },
+ {
+  "id": "img:mughal-arch",
+  "slug": "mughal-arch",
+  "name": "Mughal Arch",
+  "note": "Lotus & golden arch",
+  "area": [
+   0.2,
+   0.2,
+   0.62,
+   0.58
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:moon-cat",
+  "slug": "moon-cat",
+  "name": "Moon Cat",
+  "note": "Watercolour stars & kitten",
+  "area": [
+   0.17,
+   0.12,
+   0.6,
+   0.6
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1041
+ },
+ {
+  "id": "img:starry-river",
+  "slug": "starry-river",
+  "name": "Starry River",
+  "note": "Navy night swirls",
+  "area": [
+   0.2,
+   0.1,
+   0.6,
+   0.8
+  ],
+  "panel": true,
+  "w": 533,
+  "h": 800
+ },
+ {
+  "id": "img:velvet-lily",
+  "slug": "velvet-lily",
+  "name": "Velvet Lily",
+  "note": "Navy velvet & blue lilies",
+  "area": [
+   0.14,
+   0.24,
+   0.72,
+   0.42
+  ],
+  "panel": true,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:lantern-garden",
+  "slug": "lantern-garden",
+  "name": "Lantern Garden",
+  "note": "Sage florals & lanterns",
+  "area": [
+   0.22,
+   0.3,
+   0.66,
+   0.44
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1307
+ },
+ {
+  "id": "img:cosmic-collage",
+  "slug": "cosmic-collage",
+  "name": "Cosmic Collage",
+  "note": "Planets & torn glitter",
+  "area": [
+   0.1,
+   0.33,
+   0.8,
+   0.36
+  ],
+  "panel": true,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:powder-rose",
+  "slug": "powder-rose",
+  "name": "Powder Rose",
+  "note": "Dusty blue & ivory roses",
+  "area": [
+   0.13,
+   0.15,
+   0.74,
+   0.7
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:crimson-lace",
+  "slug": "crimson-lace",
+  "name": "Crimson Lace",
+  "note": "Cream lace on burgundy",
+  "area": [
+   0.17,
+   0.21,
+   0.66,
+   0.52
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:ancient-scroll",
+  "slug": "ancient-scroll",
+  "name": "Ancient Scroll",
+  "note": "Engraved antique scroll",
+  "area": [
+   0.22,
+   0.24,
+   0.56,
+   0.52
+  ],
+  "panel": false,
+  "w": 934,
+  "h": 1121
+ },
+ {
+  "id": "img:petal-scroll",
+  "slug": "petal-scroll",
+  "name": "Petal Scroll",
+  "note": "Soft pink floral scroll",
+  "area": [
+   0.2,
+   0.17,
+   0.6,
+   0.62
+  ],
+  "panel": false,
+  "w": 567,
+  "h": 782
+ },
+ {
+  "id": "img:rose-pocket",
+  "slug": "rose-pocket",
+  "name": "Rose Pocket",
+  "note": "Floral envelope pocket",
+  "area": [
+   0.16,
+   0.09,
+   0.66,
+   0.4
+  ],
+  "panel": false,
+  "w": 564,
+  "h": 795
+ },
+ {
+  "id": "img:rose-parchment",
+  "slug": "rose-parchment",
+  "name": "Rose Parchment",
+  "note": "Pink roses & gold scroll",
+  "area": [
+   0.14,
+   0.17,
+   0.68,
+   0.6
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1104
+ },
+ {
+  "id": "img:pressed-meadow",
+  "slug": "pressed-meadow",
+  "name": "Pressed Meadow",
+  "note": "Lined page, pressed flowers",
+  "area": [
+   0.18,
+   0.15,
+   0.64,
+   0.68
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1041
+ },
+ {
+  "id": "img:magnolia-lines",
+  "slug": "magnolia-lines",
+  "name": "Magnolia Lines",
+  "note": "Kraft lines & magnolia",
+  "area": [
+   0.08,
+   0.06,
+   0.62,
+   0.56
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1308
+ },
+ {
+  "id": "img:oval-roses",
+  "slug": "oval-roses",
+  "name": "Oval Roses",
+  "note": "Vintage oval & roses",
+  "area": [
+   0.16,
+   0.09,
+   0.68,
+   0.8
+  ],
+  "panel": false,
+  "w": 640,
+  "h": 909
+ },
+ {
+  "id": "img:french-rose",
+  "slug": "french-rose",
+  "name": "French Rose",
+  "note": "Old French print & roses",
+  "area": [
+   0.09,
+   0.06,
+   0.82,
+   0.64
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:autumn-moth",
+  "slug": "autumn-moth",
+  "name": "Autumn Moth",
+  "note": "Gilded frame & moth",
+  "area": [
+   0.18,
+   0.33,
+   0.64,
+   0.56
+  ],
+  "panel": false,
+  "w": 1131,
+  "h": 1600
+ },
+ {
+  "id": "img:ink-and-quill",
+  "slug": "ink-and-quill",
+  "name": "Ink & Quill",
+  "note": "Stained lined parchment",
+  "area": [
+   0.09,
+   0.14,
+   0.72,
+   0.8
+  ],
+  "panel": false,
+  "w": 721,
+  "h": 1047
+ },
+ {
+  "id": "img:white-rose-arch",
+  "slug": "white-rose-arch",
+  "name": "White Rose Arch",
+  "note": "Wild roses & green lines",
+  "area": [
+   0.19,
+   0.35,
+   0.6,
+   0.46
+  ],
+  "panel": false,
+  "w": 1000,
+  "h": 1450
+ },
+ {
+  "id": "img:dream-journal",
+  "slug": "dream-journal",
+  "name": "Dream Journal",
+  "note": "Torn pink scrapbook",
+  "area": [
+   0.13,
+   0.12,
+   0.7,
+   0.62
+  ],
+  "panel": false,
+  "w": 736,
+  "h": 1104
+ },
+ {
+  "id": "img:forget-me-not-lines",
+  "slug": "forget-me-not-lines",
+  "name": "Forget-me-not Lines",
+  "note": "Blue flax & rose border",
+  "area": [
+   0.25,
+   0.08,
+   0.7,
+   0.84
+  ],
+  "panel": false,
+  "w": 900,
+  "h": 1600
+ },
+ {
+  "id": "img:small-things",
+  "slug": "small-things",
+  "name": "Small Things",
+  "note": "Deckle paper & dried flowers",
+  "area": [
+   0.3,
+   0.11,
+   0.54,
+   0.6
+  ],
+  "panel": false,
+  "w": 701,
+  "h": 1122
+ }
+]

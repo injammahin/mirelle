@@ -16,72 +16,95 @@ const p = (o) => ({ ...base, ...o })
 
 export const FILTERS = [
   { id: 'original', name: 'Original', mood: 'As captured', params: p({}) },
-  // Pinterest looks: matched to real reference photos (data/looks.json)
-  { id: 'window-glow', name: 'Window Glow', mood: 'Sun through the curtains', look: true, params: p({ look: 'window-glow', lookStrength: 85, glow: 70, soft: 34, haze: 52, hazeFrom: [0.12, 0.08], hazeColor: [255, 214, 176], grain: 4 }) },
-  { id: 'peach-bloom', name: 'Peach Bloom', mood: 'Glowing peach petals', look: true, params: p({ look: 'peach-bloom', lookStrength: 85, glow: 85, soft: 28, haze: 30, hazeFrom: [0.5, 0.15], hazeColor: [255, 196, 170], contrast: 6 }) },
-  { id: 'linen-blush', name: 'Linen Blush', mood: 'Soft & airy pink', look: true, params: p({ look: 'linen-blush', lookStrength: 80, lookCast: 26, glow: 36, soft: 24, haze: 30, hazeFrom: [0.2, 0], hazeColor: [255, 228, 232] }) },
-  { id: 'afternoon-haze', name: 'Afternoon Haze', mood: 'Hazy golden light', look: true, params: p({ look: 'afternoon-haze', lookStrength: 85, glow: 55, soft: 22, haze: 46, hazeFrom: [0.85, 0.1], hazeColor: [255, 222, 170], fade: 6 }) },
-  { id: 'super8-rose', name: 'Super 8 Rose', mood: 'Faded film memory', look: true, params: p({ look: 'super8-rose', lookStrength: 85, glow: 40, soft: 32, haze: 22, hazeFrom: [0.5, 0.3], hazeColor: [255, 200, 220], grain: 16, fade: 6 }) },
-  { id: 'golden-wall', name: 'Golden Wall', mood: 'Warm sunset shadows', look: true, params: p({ look: 'golden-wall', lookStrength: 85, glow: 30, soft: 10, haze: 44, hazeFrom: [0.9, 0.2], hazeColor: [255, 170, 90] }) },
-  { id: 'lamp-light', name: 'Lamp Light', mood: 'Cosy tungsten night', look: true, params: p({ look: 'lamp-light', lookStrength: 85, glow: 34, soft: 18, haze: 48, hazeFrom: [0.1, 0.12], hazeColor: [255, 160, 80], grain: 12, vignette: 18 }) },
-  { id: 'sunlit-table', name: 'Sunlit Table', mood: 'Rich golden hour', look: true, params: p({ look: 'sunlit-table', lookStrength: 80, glow: 34, soft: 10, haze: 36, hazeFrom: [0.15, 0.05], hazeColor: [255, 205, 140] }) },
-  { id: 'candlelit-pink', name: 'Candlelit Pink', mood: 'Moody warm evening', look: true, params: p({ look: 'candlelit-pink', lookStrength: 80, lookCast: 50, glow: 30, soft: 14, haze: 22, hazeFrom: [0.1, 0.1], hazeColor: [255, 180, 120], vignette: 14 }) },
-  { id: 'paris-street', name: 'Paris Street', mood: 'Muted cinematic film', look: true, params: p({ look: 'paris-street', lookStrength: 85, glow: 34, soft: 16, haze: 30, hazeFrom: [0.1, 0.05], hazeColor: [255, 226, 190], fade: 8, grain: 8 }) },
+  // ✦ Signature looks: grade + one standout effect
   {
-    id: 'golden-hour',
-    name: 'Golden Hour',
-    mood: 'Honeyed sunlight',
-    params: p({ brightness: 6, contrast: 8, saturation: 12, warmth: 38, fade: 8, tint: { r: 255, g: 170, b: 90, a: 14 }, vignette: 22, grain: 10, leak: 22 }),
+    id: 'stardust', name: 'Stardust', mood: 'Glitter on every highlight', look: true, sig: true,
+    params: p({ lookStrength: 100, glitter: 70, glow: 22, grade: { curve: [[0, 10], [64, 70], [128, 138], [192, 206], [255, 252]], shadows: [130, 100, 130, 0.18], highlights: [255, 214, 225, 0.26], vibrance: 8, saturation: -4 } }),
   },
   {
-    id: 'disposable-90s',
-    name: '90s Disposable',
-    mood: 'Flash & film rolls',
-    params: p({ brightness: 4, contrast: 20, saturation: -4, warmth: 16, fade: 18, tint: { r: 255, g: 190, b: 140, a: 10 }, vignette: 30, grain: 48, leak: 34 }),
+    id: 'cinestill', name: '800T', mood: 'Night film, red halation', look: true, sig: true,
+    params: p({ lookStrength: 100, halation: 75, grain: 10, grade: { curve: [[0, 10], [64, 58], [128, 128], [192, 202], [255, 246]], b: [[0, 14], [128, 134], [255, 248]], shadows: [60, 110, 140, 0.34], highlights: [255, 200, 165, 0.2], vibrance: 6, saturation: -6 } }),
   },
   {
-    id: 'soft-matcha',
-    name: 'Soft Matcha',
-    mood: 'Green tea calm',
-    params: p({ brightness: 8, contrast: -8, saturation: -18, warmth: -6, fade: 24, tint: { r: 150, g: 182, b: 128, a: 22 }, vignette: 10, grain: 12 }),
+    id: 'pearl', name: 'Pearl', mood: 'Iridescent dream', look: true, sig: true,
+    params: p({ lookStrength: 100, pearl: 55, glow: 20, grade: { curve: [[0, 16], [64, 76], [128, 144], [192, 210], [255, 252]], shadows: [130, 120, 160, 0.16], highlights: [255, 240, 248, 0.2], vibrance: 4, saturation: -10 } }),
   },
   {
-    id: 'cottagecore',
-    name: 'Cottagecore Warmth',
-    mood: 'Baked bread & linen',
-    params: p({ brightness: 5, contrast: 4, saturation: -4, warmth: 28, sepia: 12, fade: 16, tint: { r: 232, g: 180, b: 140, a: 12 }, vignette: 22, grain: 18 }),
+    id: 'prism', name: 'Prism', mood: 'Vintage lens fringe', look: true, sig: true,
+    params: p({ lookStrength: 100, prism: 70, glow: 14, grain: 6, grade: { curve: [[0, 14], [64, 68], [128, 134], [192, 202], [255, 246]], shadows: [90, 110, 130, 0.2], highlights: [255, 215, 180, 0.22], vibrance: 6, saturation: -6 } }),
   },
   {
-    id: 'faded-espresso',
-    name: 'Faded Espresso',
-    mood: 'Muted coffee tones',
-    params: p({ brightness: -6, contrast: 10, saturation: -32, warmth: 18, sepia: 30, fade: 28, tint: { r: 120, g: 80, b: 60, a: 14 }, vignette: 34, grain: 24 }),
+    id: 'angel', name: 'Angel', mood: 'Heavenly soft bloom', look: true, sig: true,
+    params: p({ lookStrength: 100, glow: 38, soft: 26, grade: { curve: [[0, 18], [64, 82], [128, 150], [192, 216], [255, 254]], shadows: [150, 130, 140, 0.14], highlights: [255, 246, 236, 0.18], vibrance: 4, saturation: -12 } }),
   },
   {
-    id: 'dazz-vintage',
-    name: 'Dazz Cam Vintage',
-    mood: 'Date-stamped memories',
-    params: p({ brightness: 2, contrast: 24, saturation: 14, warmth: 12, fade: 10, tint: { r: 255, g: 120, b: 80, a: 6 }, vignette: 40, grain: 36, leak: 26, dateStamp: true }),
+    id: 'y2k-flash', name: 'Y2K Flash', mood: 'Digicam flash, date stamp', look: true, sig: true,
+    params: p({ lookStrength: 100, dateStamp: true, vignette: 16, grain: 6, grade: { curve: [[0, 6], [64, 66], [128, 142], [192, 218], [255, 255]], b: [[0, 8], [128, 136], [255, 255]], shadows: [70, 90, 130, 0.22], highlights: [235, 240, 255, 0.14], vibrance: 14, saturation: 4 } }),
   },
   {
-    id: 'clean-girl',
-    name: 'Clean Girl Minimal',
-    mood: 'Bright, airy, glowy',
-    params: p({ brightness: 14, contrast: -8, saturation: -12, warmth: 6, fade: 12, tint: { r: 255, g: 232, b: 222, a: 10 } }),
+    id: 'golden-dust', name: 'Golden Dust', mood: 'Sun glitter & honey light', look: true, sig: true,
+    params: p({ lookStrength: 100, glitter: 45, glow: 26, halation: 18, grade: { curve: [[0, 12], [64, 70], [128, 138], [192, 206], [255, 250]], b: [[0, 8], [128, 118], [255, 232]], shadows: [130, 90, 70, 0.2], highlights: [255, 205, 140, 0.32], vibrance: 10 } }),
   },
   {
-    id: 'coquette-blush',
-    name: 'Coquette Blush',
-    mood: 'Ribbons & rosewater',
-    params: p({ brightness: 8, contrast: -4, saturation: -6, warmth: 10, fade: 20, tint: { r: 255, g: 170, b: 190, a: 22 }, vignette: 16, grain: 10 }),
+    id: 'moonlit', name: 'Moonlit', mood: 'Blue-hour hush', look: true, sig: true,
+    params: p({ lookStrength: 100, glow: 18, halation: 12, grade: { curve: [[0, 14], [64, 62], [128, 126], [192, 196], [255, 244]], shadows: [60, 80, 140, 0.34], highlights: [220, 230, 255, 0.2], vibrance: -4, saturation: -18 } }),
+  },
+  // Premium grades (lib/grade.js): soft curves + split-toning + skin-safe vibrance. Subtle on purpose.
+  {
+    id: 'porcelain', name: 'Porcelain', mood: 'Clean, luminous skin', look: true,
+    params: p({ lookStrength: 100, glow: 10, grade: { curve: [[0, 6], [60, 66], [128, 140], [196, 208], [255, 252]], shadows: [150, 120, 110, 0.14], highlights: [255, 246, 238, 0.18], vibrance: 12, saturation: -4 } }),
   },
   {
-    id: 'dark-academia',
-    name: 'Dark Academia',
-    mood: 'Candlelit libraries',
-    params: p({ brightness: -12, contrast: 18, saturation: -26, warmth: 16, sepia: 20, fade: 8, tint: { r: 110, g: 75, b: 45, a: 12 }, vignette: 52, grain: 22 }),
+    id: 'honey', name: 'Honey', mood: 'Golden-hour warmth', look: true,
+    params: p({ lookStrength: 100, glow: 14, grade: { curve: [[0, 10], [64, 68], [128, 134], [192, 200], [255, 248]], r: [[0, 0], [128, 134], [255, 255]], b: [[0, 6], [128, 120], [255, 236]], shadows: [130, 90, 70, 0.2], highlights: [255, 205, 150, 0.3], vibrance: 10, saturation: -2 } }),
+  },
+  {
+    id: 'peach-fuzz', name: 'Peach Fuzz', mood: 'Soft peachy blush', look: true,
+    params: p({ lookStrength: 100, glow: 12, grade: { curve: [[0, 12], [64, 72], [128, 138], [192, 204], [255, 250]], shadows: [150, 100, 120, 0.18], highlights: [255, 200, 180, 0.3], vibrance: 8, saturation: -8 } }),
+  },
+  {
+    id: 'milk-tea', name: 'Milk Tea', mood: 'Creamy & muted', look: true,
+    params: p({ lookStrength: 100, glow: 8, grade: { curve: [[0, 22], [64, 74], [128, 134], [192, 196], [255, 240]], shadows: [120, 100, 90, 0.28], highlights: [250, 232, 205, 0.32], vibrance: -6, saturation: -24 } }),
+  },
+  {
+    id: 'seoul-cafe', name: 'Seoul Café', mood: 'Bright, airy & clean', look: true,
+    params: p({ lookStrength: 100, glow: 10, grade: { curve: [[0, 16], [64, 80], [128, 148], [192, 212], [255, 252]], shadows: [120, 140, 160, 0.2], highlights: [255, 244, 236, 0.16], vibrance: 6, saturation: -12 } }),
+  },
+  {
+    id: 'rose', name: 'Rosé', mood: 'Blush-pink romance', look: true,
+    params: p({ lookStrength: 100, glow: 12, grade: { curve: [[0, 10], [64, 70], [128, 136], [192, 202], [255, 250]], shadows: [130, 100, 130, 0.22], highlights: [255, 205, 220, 0.3], vibrance: 6, saturation: -6 } }),
+  },
+  {
+    id: 'gold-200', name: 'Gold 200', mood: 'Classic warm film', look: true,
+    params: p({ lookStrength: 100, grain: 9, glow: 6, grade: { curve: [[0, 14], [60, 62], [128, 132], [196, 202], [255, 244]], r: [[0, 4], [128, 136], [255, 252]], g: [[0, 0], [128, 130], [255, 250]], b: [[0, 18], [128, 118], [255, 226]], shadows: [80, 100, 110, 0.18], highlights: [255, 214, 160, 0.24], vibrance: 4, saturation: -6 } }),
+  },
+  {
+    id: 'cinema', name: 'Cinema', mood: 'Teal shadows, warm skin', look: true,
+    params: p({ lookStrength: 100, grade: { curve: [[0, 8], [64, 58], [128, 128], [192, 200], [255, 246]], shadows: [60, 120, 140, 0.32], highlights: [255, 196, 150, 0.22], vibrance: 4, saturation: -8 } }),
+  },
+  {
+    id: 'velvet', name: 'Velvet', mood: 'Deep, rich & moody', look: true,
+    params: p({ lookStrength: 100, vignette: 14, grade: { curve: [[0, 6], [64, 54], [128, 120], [192, 190], [255, 240]], shadows: [80, 50, 70, 0.26], highlights: [245, 210, 185, 0.16], vibrance: 0, saturation: -10 } }),
+  },
+  {
+    id: 'super-8', name: 'Super 8', mood: 'Faded home-movie film', look: true,
+    params: p({ lookStrength: 100, grain: 14, glow: 10, grade: { curve: [[0, 30], [64, 78], [128, 132], [192, 190], [255, 232]], shadows: [90, 100, 115, 0.26], highlights: [250, 225, 195, 0.3], vibrance: -4, saturation: -18 } }),
+  },
+  {
+    id: 'sunkissed', name: 'Sunkissed', mood: 'Dreamy backlit glow', look: true,
+    params: p({ lookStrength: 100, glow: 24, grade: { curve: [[0, 12], [64, 72], [128, 140], [192, 208], [255, 252]], shadows: [140, 100, 80, 0.16], highlights: [255, 200, 140, 0.3], vibrance: 10, saturation: -2 } }),
+  },
+  {
+    id: 'noir-soft', name: 'Noir Soft', mood: 'Gentle black & white', look: true,
+    params: p({ lookStrength: 100, grain: 6, grade: { mono: true, curve: [[0, 14], [64, 60], [128, 130], [192, 204], [255, 246]], highlights: [240, 228, 212, 0.08] } }),
   },
 ]
+// Older preset ids (used by vibes / saved designs) now point at the new grades.
+const ALIAS = { 'golden-hour': 'honey', 'disposable-90s': 'gold-200', 'soft-matcha': 'seoul-cafe', cottagecore: 'peach-fuzz', 'faded-espresso': 'milk-tea', 'dazz-vintage': 'super-8', 'clean-girl': 'porcelain', 'coquette-blush': 'rose', 'dark-academia': 'velvet' }
+for (const [old, to] of Object.entries(ALIAS)) {
+  const t = FILTERS.find((f) => f.id === to)
+  FILTERS.push({ ...t, id: old, hidden: true })
+}
 
 export const FILTER_MAP = Object.fromEntries(FILTERS.map((f) => [f.id, f]))
 export const DEFAULT_ADJ = FILTER_MAP.original.params

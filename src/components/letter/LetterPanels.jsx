@@ -10,6 +10,8 @@ import { renderLetter, letterAssetList, stampDate } from '../../lib/letterRender
 import { makeCanvas } from '../../lib/photoRenderer'
 import { loadSvgImage } from '../../lib/assets'
 import { pick } from '../../lib/random'
+import { IMAGE_PAPERS } from '../../data/letterPapers'
+import { SEALS, sealById } from '../../data/sealImages'
 import Section from '../ui/Section'
 import Slider from '../ui/Slider'
 import Switch from '../ui/Switch'
@@ -39,14 +41,41 @@ export function PaperPanel() {
     }
   }, [letter.font, letter.ink])
   return (
+    <div className="space-y-5">
+      <Section title="Stationery">
+        <div className="grid grid-cols-2 gap-3">
+          {IMAGE_PAPERS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => {
+                setLetter({ paper: p.id, textBox: null, seal: { ...letter.seal, pos: null } })
+                // switch the canvas to the paper's own shape so nothing is cropped
+                const r = p.w / p.h
+                const best = [['1:1', 1], ['4:5', 0.8], ['9:16', 0.5625]].reduce((a, b) => (Math.abs(b[1] - r) < Math.abs(a[1] - r) ? b : a))[0]
+                useStudio.getState().setAspect(best)
+              }}
+              className={`tile p-1.5 text-left ${letter.paper === p.id ? 'tile-active' : ''}`}
+            >
+              <div className="aspect-[4/5] overflow-hidden rounded-lg bg-linen">
+                <img src={p.thumb} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
+              </div>
+              <div className="px-1 pt-1.5 text-[12px] font-semibold leading-tight text-espresso">{p.name}</div>
+              <div className="px-1 pb-0.5 text-[10.5px] text-taupe">{p.note}</div>
+            </button>
+          ))}
+        </div>
+      </Section>
+      <Section title="Classic papers">
     <div className="grid grid-cols-2 gap-3">
       {PAPERS.map((p) => (
-        <button key={p.id} onClick={() => setLetter({ paper: p.id })} className={`tile p-1.5 text-left ${letter.paper === p.id ? 'tile-active' : ''}`}>
+        <button key={p.id} onClick={() => setLetter({ paper: p.id, textBox: null, seal: { ...letter.seal, pos: null } })} className={`tile p-1.5 text-left ${letter.paper === p.id ? 'tile-active' : ''}`}>
           <div className="aspect-[4/5] overflow-hidden rounded-lg bg-linen">{thumbs[p.id] && <img src={thumbs[p.id]} alt={p.name} className="h-full w-full object-cover" />}</div>
           <div className="px-1 pt-1.5 text-[12px] font-semibold leading-tight text-espresso">{p.name}</div>
           <div className="px-1 pb-0.5 text-[10.5px] text-taupe">{p.note}</div>
         </button>
       ))}
+    </div>
+      </Section>
     </div>
   )
 }
@@ -166,31 +195,17 @@ export function SealPanel() {
     <div className="space-y-5">
       <Switch label="Wax seal" hint="Pressed into the corner or envelope flap" checked={seal.enabled} onChange={(v) => setSeal({ enabled: v })} />
       <div className={seal.enabled ? 'space-y-5' : 'pointer-events-none space-y-5 opacity-40'}>
-        <Section title="Stamp">
-          <div className="grid grid-cols-4 gap-2">
-            {SEAL_STYLES.map((st) => (
-              <button key={st.id} onClick={() => setSeal({ style: st.id })} className={`tile flex flex-col items-center p-1.5 ${seal.style === st.id ? 'tile-active' : ''}`}>
-                <img src={svgToDataUrl(sealSvg(st.id, seal.color, seal.monogram))} alt={st.name} className="aspect-square w-full" />
-                <span className="mt-1 text-center text-[10px] font-medium leading-tight">{st.name}</span>
+        <Section title="Seal">
+          <div className="grid grid-cols-3 gap-2.5">
+            {SEALS.map((st) => (
+              <button key={st.id} onClick={() => setSeal({ style: st.id })} className={`tile flex flex-col items-center p-2 ${sealById(seal.style).id === st.id ? 'tile-active' : ''}`} title={st.name}>
+                <img src={st.src} alt={st.name} loading="lazy" className="aspect-square w-full object-contain drop-shadow-md" />
+                <span className="mt-1 truncate text-center text-[10px] font-medium leading-tight">{st.name}</span>
               </button>
             ))}
           </div>
         </Section>
-        <Section title="Wax colour">
-          <div className="flex gap-3">
-            {Object.entries(SEAL_COLORS).map(([k, c]) => (
-              <button key={k} onClick={() => setSeal({ color: k })} className="flex flex-col items-center gap-1">
-                <span className={`h-10 w-10 rounded-full border-2 shadow-sm transition ${seal.color === k ? 'scale-110 border-espresso' : 'border-white'}`} style={{ background: `radial-gradient(circle at 35% 30%, ${c.light}, ${c.base} 55%, ${c.dark})` }} />
-                <span className="text-[10.5px] text-taupe">{c.name}</span>
-              </button>
-            ))}
-          </div>
-        </Section>
-        {seal.style === 'monogram' && (
-          <Section title="Monogram">
-            <input className="input w-24 text-center font-serif text-xl italic" maxLength={2} value={seal.monogram} onChange={(e) => setSeal({ monogram: e.target.value.toUpperCase() || 'A' })} />
-          </Section>
-        )}
+        <Slider label="Size" min={0.6} max={1.8} step={0.05} value={seal.size || 1} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => setSeal({ size: v })} />
         <Section title="Position">
           <Segmented value={seal.position} onChange={(v) => setSeal({ position: v })} size="sm" options={SEAL_POSITIONS.map((p) => ({ value: p.id, label: p.name }))} />
         </Section>

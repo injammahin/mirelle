@@ -27,10 +27,11 @@ export const useStudio = create((set, get) => ({
   setZoom: (zoom) => set({ zoom: clamp(zoom, 0.5, 2.5) }),
 
   // ----- photo -----
-  photo: exampleFor(0) ? { src: exampleFor(0).src, name: exampleFor(0).name, sampleId: 'example' } : { src: SAMPLE_MAP.coffee.src, name: SAMPLE_MAP.coffee.name, sampleId: 'coffee' },
+  // starts empty: frames show an "Add photo" slot until the user picks their own photo
+  photo: { src: null, name: '', sampleId: null },
   setPhoto: (photo) => set({ photo, crop: { zoom: 1, x: 0, y: 0 } }),
-  filterId: 'golden-hour',
-  adj: { ...FILTER_MAP['golden-hour'].params },
+  filterId: 'original',
+  adj: { ...FILTER_MAP.original.params },
   crop: { zoom: 1, x: 0, y: 0 },
   frameId: 'polaroid',
   captions: { ...DEFAULT_CAPTIONS },
@@ -67,6 +68,14 @@ export const useStudio = create((set, get) => ({
     get().pushHistory()
     set((s) => ({ doodle: { ...s.doodle, ...p } }))
   },
+  removeSlotPhoto: (i) =>
+    i === 0
+      ? set({ photo: { src: null, name: '', sampleId: null }, crop: { zoom: 1, x: 0, y: 0 } })
+      : set((s) => {
+          const slotPhotos = { ...s.slotPhotos }
+          delete slotPhotos[i]
+          return { slotPhotos }
+        }),
   readyExport: null, // rendered image waiting for the user's tap to open the share sheet (mobile)
   setReadyExport: (readyExport) => set({ readyExport }),
   framesVersion: 0,
@@ -161,6 +170,15 @@ export const useStudio = create((set, get) => ({
   // ----- letter -----
   letter: { ...DEFAULT_LETTER },
   setLetter: (patch) => set((s) => ({ letter: { ...s.letter, ...patch } })),
+  letterSel: null,
+  addLetterSticker: (stickerId) => {
+    const def = STICKER_MAP[stickerId]
+    const n = (get().letter.layers || []).length
+    const layer = { id: uid(), type: 'sticker', stickerId, x: 0.5 + ((n % 3) - 1) * 0.18, y: 0.3 + ((n % 4) * 0.14), w: def?.kind === 'image' ? 0.26 : def?.defaultW || 0.2, rotation: Math.round(Math.random() * 16 - 8), opacity: 1, flip: false }
+    set((s) => ({ letter: { ...s.letter, layers: [...(s.letter.layers || []), layer] }, letterSel: layer.id }))
+  },
+  updateLetterLayer: (id, patch) => set((s) => ({ letter: { ...s.letter, layers: (s.letter.layers || []).map((l) => (l.id === id ? { ...l, ...patch } : l)) } })),
+  removeLetterLayer: (id) => set((s) => ({ letter: { ...s.letter, layers: (s.letter.layers || []).filter((l) => l.id !== id) }, letterSel: null })),
   setSeal: (patch) => set((s) => ({ letter: { ...s.letter, seal: { ...s.letter.seal, ...patch } } })),
   setPin: (patch) => set((s) => ({ letter: { ...s.letter, photoPin: { ...s.letter.photoPin, ...patch } } })),
   toggleBotanical: (id) =>
@@ -192,6 +210,7 @@ try {
   if (saved) {
     const patch = {}
     for (const k of PERSIST) if (saved[k] !== undefined) patch[k] = saved[k]
+    if (patch.photo?.sampleId) delete patch.photo // never bring back example photos
     // only restore the frame if it still exists (uploaded frames load asynchronously)
     if (patch.frameId && !FRAME_MAP[patch.frameId] && !patch.frameId.startsWith('tpl-mine-')) delete patch.frameId
     // stickers placed from the bundled set must still exist

@@ -25,7 +25,7 @@ export const PHOTO_TOOLS = [
 export const LETTER_TOOLS = [
   { id: 'paper', label: 'Paper', icon: ScrollText, side: 'left', render: () => <PaperPanel /> },
   { id: 'seal', label: 'Seal', icon: Stamp, side: 'left', render: () => <SealPanel /> },
-  { id: 'flowers', label: 'Flowers', icon: Leaf, side: 'left', render: () => <BotanicalsPanel /> },
+  { id: 'stickers', label: 'Stickers', icon: Leaf, side: 'left', render: () => <StickersPanel /> },
   { id: 'write', label: 'Write', icon: PenLine, side: 'right', render: () => <WritePanel /> },
   { id: 'type', label: 'Type', icon: CaseSensitive, side: 'right', render: () => <TypePanel /> },
   { id: 'export', label: 'Export', icon: Download, side: 'right', render: () => <ExportPanel kind="letter" /> },

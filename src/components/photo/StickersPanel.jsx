@@ -81,7 +81,8 @@ export default function StickersPanel() {
               tabIndex={0}
               onClick={async () => {
                 await prepareSticker(s).catch(() => {}) // know the real size before placing
-                addSticker(s.id)
+                if (useStudio.getState().mode === 'letter') useStudio.getState().addLetterSticker(s.id)
+                else addSticker(s.id)
                 showToast(`${s.name} added — drag it into place`)
               }}
               className="tile group relative flex aspect-square cursor-pointer flex-col items-center justify-center p-2"

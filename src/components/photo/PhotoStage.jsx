@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { RotateCw, Trash2, Copy, Move, ImagePlus } from 'lucide-react'
+import { RotateCw, Trash2, Copy, Move, ImagePlus, X } from 'lucide-react'
 import { useStudio } from '../../store/useStudio'
 import { ASPECTS } from '../../data/filters'
 import { STICKER_MAP } from '../../data/stickers'
@@ -263,7 +263,7 @@ export default function PhotoStage() {
   })
   const layoutNow = getFrameLayout(frameId, dispW, dispH)
   const slotBox = panning ? (layoutNow.slots || [layoutNow])[activeSlot.current] || layoutNow : null
-  const multiSlots = layoutNow.slots?.length > 1 ? layoutNow.slots : []
+  const allSlots = layoutNow.slots || [layoutNow]
   const slotFileRef = useRef(null)
   const pickSlot = useRef(0)
 
@@ -285,22 +285,56 @@ export default function PhotoStage() {
             )}
           </AnimatePresence>
 
-          {/* multi-photo frames: a different photo for each slot */}
-          {multiSlots.map((S, i) => (
-            <button
-              key={i}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => {
-                pickSlot.current = i
-                slotFileRef.current?.click()
-              }}
-              className="absolute z-20 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-semibold text-espresso shadow-soft backdrop-blur transition hover:bg-white"
-              style={{ left: S.x + S.w / 2, top: S.y + S.h - 30 }}
-              title={`Change photo ${i + 1}`}
-            >
-              <ImagePlus size={12} /> Photo {i + 1}
-            </button>
-          ))}
+          {/* photo slots: add / change / remove */}
+          {allSlots.map((S, i) => {
+            const has = i === 0 ? !!photo.src : !!slotPhotos[i]?.src || (!!photo.src && !slotPhotos[i])
+            const own = i === 0 ? !!photo.src : !!slotPhotos[i]?.src
+            const pick = () => {
+              pickSlot.current = i
+              slotFileRef.current?.click()
+            }
+            return (
+              <div key={i}>
+                {!has ? (
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={pick}
+                    className="absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 rounded-2xl bg-white/85 px-4 py-3 text-[12px] font-semibold text-espresso shadow-soft backdrop-blur transition hover:bg-white"
+                    style={{ left: S.x + S.w / 2, top: S.y + S.h / 2 }}
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-terracotta text-white"><ImagePlus size={17} /></span>
+                    Add photo{allSlots.length > 1 ? ` ${i + 1}` : ''}
+                  </button>
+                ) : (
+                  <>
+                    {allSlots.length > 1 && (
+                      <button
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={pick}
+                        className="absolute z-20 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-semibold text-espresso shadow-soft backdrop-blur transition hover:bg-white"
+                        style={{ left: S.x + S.w / 2, top: S.y + S.h - 30 }}
+                        title={`Change photo ${i + 1}`}
+                      >
+                        <ImagePlus size={12} /> Photo {i + 1}
+                      </button>
+                    )}
+                    {own && (
+                      <button
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => useStudio.getState().removeSlotPhoto(i)}
+                        className="absolute z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-espresso shadow-soft backdrop-blur transition hover:bg-white hover:text-red-600"
+                        style={{ left: S.x + S.w - 34, top: S.y + 6 }}
+                        title="Remove photo"
+                        aria-label="Remove photo"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
           <input
             ref={slotFileRef}
             type="file"

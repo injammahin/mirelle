@@ -1,11 +1,13 @@
 // Aesthetic Letter Studio renderer — paper, ink, wax seals, pressed botanicals, polaroid pins.
-import { getSvgImage } from './assets'
+import { getSvgImage, getImage } from './assets'
+import { IMAGE_PAPER_MAP } from '../data/letterPapers'
+import { sealById } from '../data/sealImages'
 import { mulberry32 } from './random'
 import { fontString } from '../data/fonts'
 import { INK_MAP, WASHI_COLORS } from '../data/letter'
 import { STICKER_MAP } from '../data/stickers'
 import { sealSvg, PAPERCLIP_SVG, CLOTHESPIN_SVG } from '../data/seals'
-import { roundRectPath, tornRectPath, drawSpacedLine } from './photoRenderer'
+import { roundRectPath, tornRectPath, drawSpacedLine, drawLayers } from './photoRenderer'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -384,17 +386,61 @@ export function renderLetter(ctx, W, H, letter, { photoCanvas = null } = {}) {
   ctx.lineTo(-W * 0.5, H)
   ctx.fill()
 
-  const P = { x: W * 0.075, y: H * 0.055, w: W * 0.85, h: H * 0.89 }
-  drawPaper(ctx, letter.paper, P, letter.seed || 7)
+  // real stationery image (fills the page) or one of the classic drawn papers
+  const ip = IMAGE_PAPER_MAP[letter.paper]
+  let P
+  if (ip) {
+    // same shape as the canvas -> fill it; otherwise show the whole sheet resting on the desk
+    const close = Math.abs(ip.w / ip.h - W / H) / (W / H) < 0.06
+    const k = close ? Math.max(W / ip.w, H / ip.h) : Math.min(W / ip.w, H / ip.h) * 0.94
+    const dw = ip.w * k, dh = ip.h * k, ox = (W - dw) / 2, oy = (H - dh) / 2
+    const im = getImage(ip.src, ip.src)
+    if (im) {
+      ctx.save()
+      ctx.imageSmoothingQuality = 'high'
+      if (!close) {
+        ctx.shadowColor = 'rgba(60,40,20,0.3)'
+        ctx.shadowBlur = Math.min(W, H) * 0.03
+        ctx.shadowOffsetY = Math.min(W, H) * 0.01
+      }
+      ctx.drawImage(im, ox, oy, dw, dh)
+      ctx.restore()
+    } else {
+      ctx.fillStyle = '#f6efe2'
+      ctx.fillRect(0, 0, W, H)
+    }
+    const [ax, ay, aw, ah] = ip.area
+    P = { x: ox + ax * dw, y: oy + ay * dh, w: aw * dw, h: ah * dh }
+  } else {
+    P = { x: W * 0.075, y: H * 0.055, w: W * 0.85, h: H * 0.89 }
+    drawPaper(ctx, letter.paper, P, letter.seed || 7)
+  }
+  // sizes come from the paper; the user may move / resize the text box (letter.textBox, fractions of canvas)
+  const P0 = P
+  const tb = letter.textBox
+  if (tb) P = { x: tb.x * W, y: tb.y * H, w: tb.w * W, h: tb.h * H }
+  {
+    if (ip?.panel) {
+      // soft writing card so text stays readable on busy patterns
+      ctx.save()
+      ctx.fillStyle = 'rgba(255,252,245,0.86)'
+      ctx.shadowColor = 'rgba(60,40,20,0.12)'
+      ctx.shadowBlur = Math.min(W, H) * 0.02
+      ctx.beginPath()
+      roundRectPath(ctx, P.x, P.y, P.w, P.h, Math.min(P.w, P.h) * 0.04)
+      ctx.fill()
+      ctx.restore()
+    }
+  }
 
-  const ps = Math.min(P.w, P.h)
-  const pad = P.w * 0.09
+  const ps = Math.min(P0.w, P0.h)
+  const pad = Math.min(P.w * (ip ? 0.05 : 0.09), ps * 0.09)
   let cx0 = P.x + pad
   let cx1 = P.x + P.w - pad
   if (letter.paper === 'botanical') cx0 = P.x + P.w * 0.22
   if (letter.paper === 'grid') cx0 = P.x + P.w * 0.14
   if (letter.paper === 'deckle') cx1 = P.x + P.w * 0.56
-  const top = P.y + P.h * 0.075
+  const top = P.y + P.h * (ip ? 0.03 : 0.075)
   const exclusions = []
 
   // photo pin
@@ -415,23 +461,20 @@ export function renderLetter(ctx, W, H, letter, { photoCanvas = null } = {}) {
   }
 
   // postmark
-  const pmR = ps * 0.075
-  if (letter.postmark && letter.paper !== 'deckle') {
-    const onLeft = pin.enabled && (pin.corner || 'top-right') === 'top-right'
-    const pmx = onLeft ? cx0 + pmR : cx1 - pmR
-    const pmy = top + pmR
-    const ex = onLeft ? pmx - pmR : pmx - pmR * 2.8
-    exclusions.push({ x: ex, y: pmy - pmR, w: pmR * 3.8, h: pmR * 2.1, _pm: { x: pmx, y: pmy } })
-  }
+  // (round postmark stamp removed by design)
 
   // seal geometry (reserved before text)
   const seal = letter.seal || {}
   let sealRect = null
   if (seal.enabled) {
-    const size = ps * 0.18
+    const size = ps * 0.27 * (seal.size || 1)
     let sx
     let sy
-    if (seal.position === 'bottom-left') {
+    if (seal.pos) {
+      // dragged by the user
+      sx = seal.pos.x * W
+      sy = seal.pos.y * H
+    } else if (seal.position === 'bottom-left') {
       sx = P.x + pad * 0.6 + size / 2
       sy = P.y + P.h - pad * 0.55 - size / 2
     } else if (seal.position === 'flap') {
@@ -441,7 +484,10 @@ export function renderLetter(ctx, W, H, letter, { photoCanvas = null } = {}) {
       sx = P.x + P.w - pad * 0.6 - size / 2
       sy = P.y + P.h - pad * 0.55 - size / 2
     }
-    sealRect = { x: sx - size / 2, y: sy - size / 2, w: size, h: size }
+    const sd = sealById(seal.style)
+    const sw = sd.w >= sd.h ? size : (size * sd.w) / sd.h
+    const sh = sd.h >= sd.w ? size : (size * sd.h) / sd.w
+    sealRect = { x: sx - sw / 2, y: sy - sh / 2, w: sw, h: sh }
     exclusions.push({ ...sealRect })
   }
 
@@ -450,9 +496,6 @@ export function renderLetter(ctx, W, H, letter, { photoCanvas = null } = {}) {
     if (pin.enabled && c === (pin.corner || 'top-right')) return false
     if (seal.enabled && seal.position === c) return false
     if (seal.enabled && seal.position === 'flap' && c === 'bottom-right') return false
-    const postmarkLeft = letter.postmark && letter.paper !== 'deckle' && pin.enabled && (pin.corner || 'top-right') === 'top-right'
-    if (postmarkLeft && c === 'top-left') return false
-    if (letter.postmark && letter.paper !== 'deckle' && !postmarkLeft && c === 'top-right') return false
     return true
   })
   const botanicalPlan = []
@@ -563,8 +606,6 @@ export function renderLetter(ctx, W, H, letter, { photoCanvas = null } = {}) {
   }
 
   // --- postmark drawing ---
-  const pm = exclusions.find((e) => e._pm)
-  if (pm) drawPostmark(ctx, pm._pm.x, pm._pm.y, pmR, ink, stampDate())
 
   // --- botanicals with washi tape ---
   botanicalPlan.forEach(({ st, x, yy, w, h, rot }) => {
@@ -587,9 +628,9 @@ export function renderLetter(ctx, W, H, letter, { photoCanvas = null } = {}) {
 
   // --- wax seal ---
   if (sealRect) {
-    const svg = sealSvg(seal.style, seal.color, seal.monogram)
-    const img = getSvgImage(`seal:${seal.style}:${seal.color}:${seal.monogram}`, svg)
-    if (seal.position === 'flap') {
+    const sd = sealById(seal.style)
+    const img = getImage(sd.src, sd.src)
+    if (seal.position === 'flap' && !seal.pos) {
       // envelope flap peeking under the seal
       ctx.save()
       ctx.fillStyle = 'rgba(0,0,0,0.06)'
@@ -606,12 +647,19 @@ export function renderLetter(ctx, W, H, letter, { photoCanvas = null } = {}) {
       ctx.shadowBlur = sealRect.w * 0.1
       ctx.shadowOffsetY = sealRect.w * 0.04
       ctx.translate(sealRect.x + sealRect.w / 2, sealRect.y + sealRect.h / 2)
-      ctx.rotate(-0.12)
+      ctx.rotate(-0.08)
       ctx.drawImage(img, -sealRect.w / 2, -sealRect.h / 2, sealRect.w, sealRect.h)
       ctx.restore()
     }
   }
+  // real stickers placed by the user
+  drawLayers(ctx, letter.layers || [], W, H)
   ctx.restore()
+  // layout (fractions of the canvas) so the editor can draw drag handles in the right place
+  return {
+    text: { x: P.x / W, y: P.y / H, w: P.w / W, h: P.h / H },
+    seal: sealRect ? { x: sealRect.x / W, y: sealRect.y / H, w: sealRect.w / W, h: sealRect.h / H } : null,
+  }
 }
 
 export function letterAssetList(letter) {
@@ -620,10 +668,6 @@ export function letterAssetList(letter) {
   if (letter.paper === 'botanical') ['fern', 'eucalyptus', 'lavender'].forEach((id) => list.push(['st:' + id, STICKER_MAP[id].svg]))
   const wc = WASHI_COLORS[letter.washi] || WASHI_COLORS.sage
   list.push(['st:' + wc.id, STICKER_MAP[wc.id].svg])
-  if (letter.seal?.enabled) {
-    const s = letter.seal
-    list.push([`seal:${s.style}:${s.color}:${s.monogram}`, sealSvg(s.style, s.color, s.monogram)])
-  }
   if (letter.photoPin?.enabled) list.push(['clip:' + letter.photoPin.clip, letter.photoPin.clip === 'clothespin' ? CLOTHESPIN_SVG : PAPERCLIP_SVG])
   return list
 }
